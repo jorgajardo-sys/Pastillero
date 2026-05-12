@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pastillero">
+<meta name="theme-color" content="#0f1a14">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<title>Pastillero · Jorge</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;1,300&family=Instrument+Sans:wght@400;500;600&display=swap');
+
+:root {
+  --bg: #0f1a14;
+  --surface: #162019;
+  --surface2: #1e2d22;
+  --surface3: #243329;
+  --accent: #4ade80;
+  --accent-dim: #22c55e44;
+  --warn: #fbbf24;
+  --warn-dim: #fbbf2422;
+  --danger: #f87171;
+  --text: #e8f5ec;
+  --text2: #7a9e82;
+  --border: #2a3d2f;
+  --done-bg: #162d1e;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: 'Instrument Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* Safe area for notch */
+header {
+  padding-top: calc(var(--safe-top) + 12px);
+  padding-left: 20px;
+  padding-right: 20px;
+  padding-bottom: 12px;
+  background: rgba(15,26,20,0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  z-index: 100;
+}
+
+.header-top { display: flex; justify-content: space-between; align-items: flex-start; }
+
+header h1 {
+  font-family: 'Fraunces', serif;
+  font-weight: 300; font-size: 1.4rem; color: var(--accent);
+}
+header p { font-size: 0.72rem; color: var(--text2); margin-top: 1px; }
+
+.sync-pill {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 0.68rem; color: var(--text2);
+  padding: 4px 10px; border-radius: 20px;
+  border: 1px solid var(--border); background: var(--surface2);
+  white-space: nowrap;
+}
+.sync-dot { width: 6px; height: 6px; border-radius: 50%; transition: all 0.3s; background: var(--text2); }
+.sync-dot.synced { background: var(--accent); }
+.sync-dot.syncing { background: var(--warn); animation: blink 1s infinite; }
+.sync-dot.error { background: var(--danger); }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+/* Scrollable content area */
+.scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Phase tabs */
+.phase-tabs {
+  display: flex;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 50;
+}
+.phase-tab {
+  flex: 1; padding: 11px 8px; text-align: center;
+  font-size: 0.72rem; font-weight: 600; cursor: pointer;
+  border: none; background: transparent; color: var(--text2);
+  border-bottom: 2px solid transparent; transition: all 0.2s;
+  font-family: 'Instrument Sans', sans-serif;
+}
+.phase-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* Day nav */
+.day-nav {
+  display: flex; gap: 6px; padding: 10px 16px;
+  overflow-x: auto; scrollbar-width: none;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 43px; z-index: 40;
+}
+.day-nav::-webkit-scrollbar { display: none; }
+
+.day-btn {
+  flex-shrink: 0; min-width: 44px; padding: 7px 5px;
+  border-radius: 9px; border: 1px solid var(--border);
+  background: var(--surface);
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.7rem; cursor: pointer; transition: all 0.15s;
+  color: var(--text2); text-align: center; line-height: 1.4;
+  position: relative;
+}
+.day-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.day-btn.complete::after {
+  content: ''; position: absolute; top: -3px; right: -3px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--bg);
+}
+.day-btn.past { opacity: 0.5; }
+.day-btn.future { opacity: 0.35; }
+
+/* Main content */
+main {
+  padding: 14px 16px calc(var(--safe-bottom) + 20px);
+  max-width: 560px; margin: 0 auto;
+}
+
+.day-header {
+  display: flex; justify-content: space-between;
+  align-items: center; margin-bottom: 12px;
+}
+.day-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.35rem; }
+.day-date { font-size: 0.76rem; color: var(--text2); margin-top: 2px; text-transform: capitalize; }
+
+.ring-wrap { position: relative; width: 46px; height: 46px; }
+.ring-wrap svg { transform: rotate(-90deg); }
+.ring-bg { fill: none; stroke: var(--border); stroke-width: 3; }
+.ring-fg { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 0.5s ease; }
+.ring-text {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.6rem; font-weight: 600; color: var(--accent);
+}
+
+.summary {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 11px 13px; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.summary-icon { font-size: 1.2rem; }
+.summary strong { display: block; font-size: 0.86rem; }
+.summary span { font-size: 0.73rem; color: var(--text2); }
+
+.banner {
+  border-radius: 10px; padding: 9px 13px; margin-bottom: 9px;
+  font-size: 0.78rem; display: flex; gap: 8px; align-items: flex-start;
+}
+.banner.success { background: #0f2d1a44; border: 1px solid #22c55e44; color: var(--accent); }
+.banner.warn    { background: var(--warn-dim); border: 1px solid #fbbf2466; color: var(--warn); }
+.banner.info    { background: #0d1f3d44; border: 1px solid #3b82f644; color: #60a5fa; }
+
+.phase-label {
+  display: inline-block; font-size: 0.63rem; font-weight: 600;
+  letter-spacing: 0.8px; text-transform: uppercase;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.phase-label.short { background: #3d1f0a44; color: #fb923c; border: 1px solid #7c3a1566; }
+.phase-label.long  { background: #0f2d1a44; color: #4ade80;  border: 1px solid #22c55e44; }
+
+.time-block { margin-bottom: 16px; }
+.time-label {
+  font-size: 0.63rem; font-weight: 600; letter-spacing: 1.2px;
+  text-transform: uppercase; color: var(--text2); margin-bottom: 6px; padding-left: 2px;
+}
+
+.med-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 13px; margin-bottom: 6px;
+  display: flex; align-items: center; gap: 11px;
+  cursor: pointer; transition: all 0.15s; user-select: none;
+  active-state: scale(0.97);
+}
+.med-card:active { transform: scale(0.97); }
+.med-card.taken { background: var(--done-bg); border-color: #2d5a3a; }
+.med-card.taken .med-name { text-decoration: line-through; color: var(--text2); }
+
+.check {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 1.5px solid var(--border);
+  display: grid; place-items: center; flex-shrink: 0;
+  font-size: 13px; transition: all 0.15s; color: transparent;
+}
+.med-card.taken .check { background: var(--accent); border-color: var(--accent); color: #0f1a14; }
+
+.med-info { flex: 1; min-width: 0; }
+.med-name { font-weight: 600; font-size: 0.88rem; transition: color 0.15s; }
+.med-detail { font-size: 0.72rem; color: var(--text2); margin-top: 2px; }
+
+.med-tag {
+  font-size: 0.62rem; padding: 3px 7px; border-radius: 7px;
+  font-weight: 500; white-space: nowrap; flex-shrink: 0;
+}
+.tag-atb { background:#3d1f0a; color:#fb923c; border:1px solid #7c3a1566; }
+.tag-inh { background:#2d0f3d; color:#c084fc; border:1px solid #a855f744; }
+.tag-gp  { background:#3d0f2d; color:#f472b6; border:1px solid #ec489944; }
+.tag-sal { background:#0a2d2d; color:#2dd4bf; border:1px solid #14b8a644; }
+.tag-dco { background:#1a1a0a; color:#facc15; border:1px solid #eab30844; }
+.tag-cah { background:#2d1a0a; color:#fb923c; border:1px solid #f9731644; }
+.tag-ah  { background:#0d1f3d; color:#60a5fa; border:1px solid #3b82f644; }
+.tag-inh { background:#2d0f3d; color:#c084fc; border:1px solid #a855f744; }
+
+.all-done { text-align: center; padding: 20px 16px 8px; }
+.all-done .emoji { font-size: 2.6rem; display: block; margin-bottom: 6px; }
+.all-done p { font-family:'Fraunces',serif; font-size:1.05rem; color:var(--accent); }
+.all-done small { font-size:0.72rem; color:var(--text2); margin-top:3px; display:block; }
+
+.reset-btn {
+  display: block; margin: 14px auto 0; padding: 8px 16px;
+  background: transparent; border: 1px solid var(--border);
+  border-radius: 20px; font-family:'Instrument Sans',sans-serif;
+  font-size: 0.73rem; color: var(--text2); cursor: pointer; transition: all 0.2s;
+}
+.reset-btn:active { border-color: var(--danger); color: var(--danger); }
+
+.no-meds { text-align:center; padding:40px 20px; color:var(--text2); font-size:0.86rem; }
+
+/* Install banner */
+.install-banner {
+  background: linear-gradient(135deg, #1e2d22, #162019);
+  border: 1px solid var(--accent);
+  border-radius: 14px; padding: 14px 16px; margin: 0 16px 14px;
+  display: flex; align-items: center; gap: 12px;
+}
+.install-banner.hidden { display: none; }
+.install-icon { font-size: 1.8rem; flex-shrink: 0; }
+.install-text strong { display: block; font-size: 0.88rem; color: var(--accent); }
+.install-text span { font-size: 0.74rem; color: var(--text2); }
+.install-btn {
+  margin-left: auto; padding: 7px 13px; flex-shrink: 0;
+  background: var(--accent); border: none; border-radius: 20px;
+  font-family:'Instrument Sans',sans-serif; font-size:0.75rem;
+  font-weight:600; color:#0f1a14; cursor:pointer;
+}
+.dismiss-btn {
+  background: transparent; border: none; color: var(--text2);
+  font-size: 1.1rem; cursor: pointer; padding: 4px; line-height: 1;
+}
+
+/* Loading */
+.loading-screen {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 16px; z-index: 999; transition: opacity 0.4s;
+}
+.loading-screen.hidden { opacity: 0; pointer-events: none; }
+.loading-logo { font-family:'Fraunces',serif; font-size:2rem; color:var(--accent); font-weight:300; }
+.loading-bar { width:100px; height:2px; background:var(--border); border-radius:2px; overflow:hidden; }
+.loading-fill { height:100%; background:var(--accent); border-radius:2px; animation:fill 1s ease forwards; }
+@keyframes fill { from{width:0} to{width:100%} }
+</style>
+</head>
+<body>
+
+<div class="loading-screen" id="loading">
+  <div class="loading-logo">💊</div>
+  <div style="font-family:'Fraunces',serif;font-size:1.1rem;color:var(--text2)">Pastillero</div>
+  <div class="loading-bar"><div class="loading-fill"></div></div>
+</div>
+
+<header>
+  <div class="header-top">
+    <div>
+      <h1>💊 Pastillero</h1>
+      <p>Sinusitis · Dra. Siso · inicio 11 mayo 2026</p>
+    </div>
+    <div class="sync-pill">
+      <div class="sync-dot synced" id="sync-dot"></div>
+      <span id="sync-text">guardado</span>
+    </div>
+  </div>
+</header>
+
+<div class="scroll-area">
+
+  <!-- Install banner (shown on mobile Safari before install) -->
+  <div class="install-banner hidden" id="install-banner">
+    <div class="install-icon">📲</div>
+    <div class="install-text">
+      <strong>Instalar como app</strong>
+      <span>Toca Compartir → "Añadir a pantalla de inicio"</span>
+    </div>
+    <button class="dismiss-btn" onclick="dismissInstall()">×</button>
+  </div>
+
+  <div class="phase-tabs">
+    <button class="phase-tab active" id="tab-short" onclick="switchPhase('short')">🔴 Agudo · 10 días</button>
+    <button class="phase-tab" id="tab-long" onclick="switchPhase('long')">🟢 Mantención · 12 sem</button>
+  </div>
+
+  <div class="day-nav" id="day-nav"></div>
+  <main id="main"></main>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════
+const STORAGE_KEY = 'pastillero_jorge_pwa_v1';
+const START = new Date('2026-05-11T00:00:00');
+
+const MEDS_SHORT = [
+  // DÍA 1 TARDE/NOCHE (startDay:1)
+  { id:'cobefen_pm',  name:'Cobefen',                         detail:'1 comp. — con la cena (c/12h)',          time:'Noche · 8:00 PM',  to:1,  dur:7,  tag:'tag-cah', label:'Corticoide+AH' },
+  { id:'sterimar_pm', name:'Sterimar',                        detail:'1 aplic. c/fosa nasal',                  time:'Noche · 8:00 PM',  to:2,  dur:30, tag:'tag-sal', label:'Sol. salina' },
+  { id:'rinoval_pm',  name:'Rino-Val (Mometasona)',           detail:'2 puff c/fosa — tras Sterimar',          time:'Noche · 8:05 PM',  to:3,  dur:84, tag:'tag-inh', label:'Corticoide nasal' },
+  { id:'reax',        name:'Reax (Rupatadina 10 mg)',         detail:'1 comprimido',                           time:'Noche · 8:00 PM',  to:4,  dur:84, tag:'tag-ah',  label:'Antihistamínico' },
+  { id:'oxiler_pm',   name:'Oxiler D (Oximetazolina)',        detail:'1 aplic. nasal — máx. 5 días',           time:'Noche · 8:10 PM',  to:5,  dur:5,  tag:'tag-dco', label:'Descongestionante' },
+  // DESDE DÍA 2 (startDay:2)
+  { id:'omeprazol',   name:'Omeprazol 20 mg',                 detail:'1 cáps. — 30 min antes desayuno',        time:'Mañana · 7:00 AM', to:6,  dur:10, tag:'tag-gp',  label:'Gastroprotector', sd:2 },
+  { id:'sterimar_am', name:'Sterimar',                        detail:'1 aplic. c/fosa nasal',                  time:'Mañana · 8:00 AM', to:7,  dur:30, tag:'tag-sal', label:'Sol. salina',     sd:2 },
+  { id:'rinoval_am',  name:'Rino-Val (Mometasona)',           detail:'2 puff c/fosa — tras Sterimar',          time:'Mañana · 8:05 AM', to:8,  dur:84, tag:'tag-inh', label:'Corticoide nasal', sd:2 },
+  { id:'oxiler_am',   name:'Oxiler D (Oximetazolina)',        detail:'1 aplic. nasal — máx. 5 días',           time:'Mañana · 8:10 AM', to:9,  dur:5,  tag:'tag-dco', label:'Descongestionante', sd:2 },
+  { id:'cobefen_am',  name:'Cobefen',                         detail:'1 comp. — con desayuno (c/12h)',          time:'Mañana · 8:30 AM', to:10, dur:7,  tag:'tag-cah', label:'Corticoide+AH',   sd:2 },
+  { id:'levoxin',     name:'Levoxin 750 mg (Levofloxacino)', detail:'1 comp. — con el almuerzo',               time:'Tarde · 13:00',    to:11, dur:10, tag:'tag-atb', label:'Antibiótico',      sd:2 },
+];
+
+const MEDS_LONG = [
+  { id:'sterimar_am', name:'Sterimar',              detail:'1 aplic. c/fosa nasal',         time:'Mañana · 8:00 AM', to:1, dur:30, tag:'tag-sal', label:'Sol. salina' },
+  { id:'rinoval_am',  name:'Rino-Val (Mometasona)', detail:'2 puff c/fosa — tras Sterimar', time:'Mañana · 8:05 AM', to:2, dur:84, tag:'tag-inh', label:'Corticoide nasal' },
+  { id:'reax',        name:'Reax (Rupatadina)',      detail:'1 comprimido',                  time:'Noche · 8:00 PM',  to:3, dur:84, tag:'tag-ah',  label:'Antihistamínico' },
+  { id:'sterimar_pm', name:'Sterimar',              detail:'1 aplic. c/fosa nasal',         time:'Noche · 8:00 PM',  to:4, dur:30, tag:'tag-sal', label:'Sol. salina' },
+  { id:'rinoval_pm',  name:'Rino-Val (Mometasona)', detail:'2 puff c/fosa — tras Sterimar', time:'Noche · 8:05 PM',  to:5, dur:84, tag:'tag-inh', label:'Corticoide nasal' },
+];
+
+const PHASE_DAYS = { short:10, long:84 };
+const PHASE_MEDS = { short:MEDS_SHORT, long:MEDS_LONG };
+
+// ═══════════════════════════════════════════
+// STATE & STORAGE
+// ═══════════════════════════════════════════
+let state = {};
+let saveTimer = null;
+let currentPhase = 'short';
+let currentDay = todayDay();
+
+function todayDay() {
+  const t = new Date(); t.setHours(0,0,0,0);
+  const s = new Date(START); s.setHours(0,0,0,0);
+  return Math.max(1, Math.floor((t-s)/86400000)+1);
+}
+
+function calDate(day) {
+  const d = new Date(START); d.setDate(d.getDate()+day-1); return d;
+}
+
+function medsForDay(phase, day) {
+  return PHASE_MEDS[phase]
+    .filter(m => {
+      const sd = m.sd || 1;
+      const relDay = day - sd + 1;
+      return relDay >= 1 && relDay <= m.dur;
+    })
+    .sort((a,b) => a.to - b.to);
+}
+
+function sk(ph, d, id) { return `${ph}_${d}_${id}`; }
+function isTaken(ph, d, id) { return !!state[sk(ph,d,id)]; }
+
+function toggleMed(ph, d, id) {
+  state[sk(ph,d,id)] = !state[sk(ph,d,id)];
+  renderDay(ph, d);
+  renderNav(ph);
+  scheduleSave();
+}
+window.toggleMed = toggleMed;
+
+function progress(ph, d) {
+  const m = medsForDay(ph, d);
+  return { taken: m.filter(x => isTaken(ph,d,x.id)).length, total: m.length };
+}
+
+function isComplete(ph, d) {
+  const p = progress(ph,d); return p.total>0 && p.taken===p.total;
+}
+
+function load() {
+  try { const r = localStorage.getItem(STORAGE_KEY); if(r) state=JSON.parse(r); } catch{}
+}
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch{}
+}
+
+function scheduleSave() {
+  setSyncState('syncing','guardando...');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { save(); setSyncState('synced','guardado ✓'); }, 400);
+}
+
+function setSyncState(s, t) {
+  const d=document.getElementById('sync-dot'), x=document.getElementById('sync-text');
+  if(d) d.className=`sync-dot ${s}`;
+  if(x) x.textContent=t;
+}
+
+// ═══════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════
+function renderNav(ph) {
+  const nav = document.getElementById('day-nav');
+  const total = PHASE_DAYS[ph];
+  const today = todayDay();
+  nav.innerHTML = '';
+  for (let d=1; d<=total; d++) {
+    const cd = calDate(d);
+    const dn = ['D','L','M','X','J','V','S'];
+    const btn = document.createElement('button');
+    btn.className = 'day-btn';
+    btn.innerHTML = `<div style="font-size:0.58rem;opacity:0.7">${dn[cd.getDay()]}</div><div style="font-weight:600">${cd.getDate()}</div>`;
+    if (d===currentDay) btn.classList.add('active');
+    if (isComplete(ph,d)) btn.classList.add('complete');
+    if (d<today) btn.classList.add('past');
+    if (d>today) btn.classList.add('future');
+    btn.addEventListener('click', () => {
+      currentDay=d; renderNav(ph); renderDay(ph,d);
+      btn.scrollIntoView({behavior:'smooth',inline:'center'});
+    });
+    nav.appendChild(btn);
+  }
+  setTimeout(()=>nav.querySelector('.active')?.scrollIntoView({inline:'center'}),50);
+}
+
+function renderDay(ph, day) {
+  const main = document.getElementById('main');
+  const cd = calDate(day);
+  const meds = medsForDay(ph, day);
+  const {taken, total} = progress(ph, day);
+  const pct = total ? Math.round(taken/total*100) : 0;
+  const C = 2*Math.PI*17;
+  const offset = C-(pct/100)*C;
+  const dateStr = cd.toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long'});
+
+  // Banners
+  let banners = '';
+  if (ph==='short') {
+    if (day===1) banners += `<div class="banner success">✅ <div><strong>Solo dosis de noche hoy</strong><br>Mañana arranca el esquema completo.</div></div>`;
+    if (day<=5)  banners += `<div class="banner warn">⚠️ <div><strong>Oxiler D — Día ${day}/5 máximo.</strong> Suspender al completar los 5 días.</div></div>`;
+    if (day<=7)  banners += `<div class="banner info">💊 <div><strong>Cobefen c/12h — Día ${day}/7.</strong> Tomar siempre con comida.</div></div>`;
+    if (day>=2)  banners += `<div class="banner info">🔴 <div><strong>Levoxin — Día ${day-1}/10.</strong> Solo con almuerzo. Sin antiácidos, leche ni calcio.</div></div>`;
+  }
+
+  // Group by time
+  const groups={}, torder=[];
+  meds.forEach(m => {
+    if (!groups[m.time]) { groups[m.time]=[]; torder.push(m.time); }
+    groups[m.time].push(m);
+  });
+
+  const groupsHtml = torder.map(t => {
+    const cards = groups[t].map(m => {
+      const tk = isTaken(ph,day,m.id);
+      return `<div class="med-card ${tk?'taken':''}" onclick="toggleMed('${ph}',${day},'${m.id}')">
+        <div class="check">${tk?'✓':''}</div>
+        <div class="med-info">
+          <div class="med-name">${m.name}</div>
+          <div class="med-detail">${m.detail}</div>
+        </div>
+        <span class="med-tag ${m.tag}">${m.label}</span>
+      </div>`;
+    }).join('');
+    return `<div class="time-block"><div class="time-label">${t}</div>${cards}</div>`;
+  }).join('');
+
+  const plClass = ph==='short'?'short':'long';
+  const plText  = ph==='short'?'Tratamiento agudo · 10 días':'Mantención · 12 semanas';
+  const icon = pct===100?'🏆':pct>=50?'💪':'⏳';
+  const txt  = pct===100?'¡Día completo!':`${pct}% completado`;
+
+  main.innerHTML = `
+    <div class="day-header">
+      <div>
+        <div class="day-title">Día ${day}</div>
+        <div class="day-date">${dateStr}</div>
+      </div>
+      <div class="ring-wrap">
+        <svg width="46" height="46" viewBox="0 0 46 46">
+          <circle class="ring-bg" cx="23" cy="23" r="17" stroke-dasharray="${C}" stroke-dashoffset="0"/>
+          <circle class="ring-fg" cx="23" cy="23" r="17" stroke-dasharray="${C}" stroke-dashoffset="${offset}"/>
+        </svg>
+        <div class="ring-text">${taken}/${total}</div>
+      </div>
+    </div>
+    <span class="phase-label ${plClass}">${plText}</span>
+    <div class="summary">
+      <div class="summary-icon">${icon}</div>
+      <div><strong>${txt}</strong><span>${taken} de ${total} medicamentos tomados</span></div>
+    </div>
+    ${banners}
+    ${isComplete(ph,day)?`<div class="all-done"><span class="emoji">✅</span><p>¡Todo tomado!</p><small>Toca cualquier med para desmarcar</small></div>`:''}
+    ${meds.length===0?`<div class="no-meds">Sin medicamentos este día</div>`:groupsHtml}
+    <button class="reset-btn" onclick="resetDay('${ph}',${day})">↺ Reiniciar día ${day}</button>
+  `;
+}
+
+function resetDay(ph, day) {
+  if (confirm(`¿Reiniciar día ${day}?`)) {
+    medsForDay(ph,day).forEach(m => { state[sk(ph,day,m.id)]=false; });
+    renderDay(ph,day); renderNav(ph); scheduleSave();
+  }
+}
+window.resetDay = resetDay;
+
+function switchPhase(ph) {
+  currentPhase=ph;
+  currentDay=Math.min(todayDay(), PHASE_DAYS[ph]);
+  document.getElementById('tab-short').classList.toggle('active',ph==='short');
+  document.getElementById('tab-long').classList.toggle('active',ph==='long');
+  renderNav(ph); renderDay(ph,currentDay);
+}
+window.switchPhase = switchPhase;
+
+// ═══════════════════════════════════════════
+// INSTALL BANNER (iOS Safari)
+// ═══════════════════════════════════════════
+function showInstallBanner() {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone;
+  const dismissed = localStorage.getItem('install_dismissed');
+  if (isIOS && !isStandalone && !dismissed) {
+    document.getElementById('install-banner').classList.remove('hidden');
+  }
+}
+
+function dismissInstall() {
+  document.getElementById('install-banner').classList.add('hidden');
+  localStorage.setItem('install_dismissed','1');
+}
+window.dismissInstall = dismissInstall;
+
+// ═══════════════════════════════════════════
+// SERVICE WORKER
+// ═══════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+load();
+setTimeout(() => {
+  document.getElementById('loading').classList.add('hidden');
+  setTimeout(()=>document.getElementById('loading')?.remove(), 400);
+  showInstallBanner();
+}, 800);
+
+renderNav(currentPhase);
+renderDay(currentPhase, currentDay);
+</script>
+</body>
+</html>
