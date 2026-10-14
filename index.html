@@ -17,6 +17,7 @@
   --bg:#0f1a14; --surface:#162019; --surface2:#1e2d22; --surface3:#243329;
   --accent:#4ade80; --accent-dim:#22c55e33; --warn:#fbbf24; --warn-dim:#fbbf2420;
   --danger:#f87171; --text:#e8f5ec; --text2:#7a9e82; --border:#2a3d2f; --done-bg:#162d1e;
+  --orange:#fb923c; --orange-dim:#fb923c20;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden}
@@ -38,14 +39,17 @@ header p{font-size:0.72rem;color:var(--text2);margin-top:1px}
 .scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 
 .phase-tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
-.phase-tab{flex:1;padding:11px 8px;text-align:center;font-size:0.72rem;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text2);border-bottom:2px solid transparent;transition:all 0.2s;font-family:'Instrument Sans',sans-serif}
+.phase-tab{flex:1;padding:9px 4px;text-align:center;font-size:0.67rem;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text2);border-bottom:2px solid transparent;transition:all 0.2s;font-family:'Instrument Sans',sans-serif;line-height:1.3}
 .phase-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.phase-tab.active.amig{color:var(--orange);border-bottom-color:var(--orange)}
 
 .day-nav{display:flex;gap:6px;padding:10px 16px;overflow-x:auto;scrollbar-width:none;background:var(--surface2);border-bottom:1px solid var(--border);position:sticky;top:43px;z-index:40}
 .day-nav::-webkit-scrollbar{display:none}
 .day-btn{flex-shrink:0;min-width:44px;padding:7px 5px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-family:'Instrument Sans',sans-serif;font-size:0.7rem;cursor:pointer;transition:all 0.15s;color:var(--text2);text-align:center;line-height:1.4;position:relative}
 .day-btn.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);font-weight:600}
+.day-btn.active.amig-active{background:var(--orange-dim);border-color:var(--orange);color:var(--orange)}
 .day-btn.complete::after{content:'';position:absolute;top:-3px;right:-3px;width:10px;height:10px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)}
+.day-btn.complete.amig-done::after{background:var(--orange)}
 .day-btn.past{opacity:0.5}
 .day-btn.future{opacity:0.35}
 
@@ -58,7 +62,9 @@ main{padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 20px);max-width:56
 .ring-wrap svg{transform:rotate(-90deg)}
 .ring-bg{fill:none;stroke:var(--border);stroke-width:3}
 .ring-fg{fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round;transition:stroke-dashoffset 0.5s ease}
+.ring-fg.amig-ring{stroke:var(--orange)}
 .ring-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:600;color:var(--accent)}
+.ring-text.amig-text{color:var(--orange)}
 
 .summary{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:11px 13px;margin-bottom:14px;display:flex;align-items:center;gap:10px}
 .summary-icon{font-size:1.2rem}
@@ -69,10 +75,12 @@ main{padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 20px);max-width:56
 .banner.success{background:#0f2d1a44;border:1px solid #22c55e44;color:var(--accent)}
 .banner.warn{background:var(--warn-dim);border:1px solid #fbbf2466;color:var(--warn)}
 .banner.info{background:#0d1f3d44;border:1px solid #3b82f644;color:#60a5fa}
+.banner.orange{background:#3d1f0a33;border:1px solid #fb923c44;color:var(--orange)}
 
 .phase-label{display:inline-block;font-size:0.63rem;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;padding:3px 10px;border-radius:20px;margin-bottom:12px}
 .phase-label.short{background:#3d1f0a44;color:#fb923c;border:1px solid #7c3a1566}
 .phase-label.long{background:#0f2d1a44;color:#4ade80;border:1px solid #22c55e44}
+.phase-label.amig{background:#3d1f0a44;color:#fb923c;border:1px solid #fb923c66}
 
 .time-block{margin-bottom:16px}
 .time-label{font-size:0.63rem;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--text2);margin-bottom:6px;padding-left:2px}
@@ -94,6 +102,9 @@ main{padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 20px);max-width:56
 .tag-dco{background:#1a1a0a;color:#facc15;border:1px solid #eab30844}
 .tag-cah{background:#2d1a0a;color:#fb923c;border:1px solid #f9731644}
 .tag-ah{background:#0d1f3d;color:#60a5fa;border:1px solid #3b82f644}
+.tag-cort{background:#3d1a00;color:#fdba74;border:1px solid #f9731644}
+.tag-exp{background:#0a1a2d;color:#7dd3fc;border:1px solid #0ea5e944}
+.tag-aines{background:#2d0f0f;color:#fca5a5;border:1px solid #ef444444}
 
 .all-done{text-align:center;padding:20px 16px 8px}
 .all-done .emoji{font-size:2.6rem;display:block;margin-bottom:6px}
@@ -142,7 +153,7 @@ main{padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 20px);max-width:56
   <div class="header-top">
     <div>
       <h1>💊 Pastillero</h1>
-      <p>Sinusitis · Dra. Siso · inicio 11 mayo 2026</p>
+      <p id="header-sub">Sinusitis · inicio 11 mayo 2026</p>
     </div>
     <div class="header-actions">
       <div class="sync-pill">
@@ -156,8 +167,9 @@ main{padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 20px);max-width:56
 
 <div class="scroll-area">
   <div class="phase-tabs">
-    <button class="phase-tab active" id="tab-short" onclick="switchPhase('short')">🔴 Agudo · 10 días</button>
-    <button class="phase-tab" id="tab-long"  onclick="switchPhase('long')">🟢 Mantención · 12 sem</button>
+    <button class="phase-tab" id="tab-short" onclick="switchPhase('short')">🔴 Agudo · 10d</button>
+    <button class="phase-tab" id="tab-long"  onclick="switchPhase('long')">🟢 Mantención · 12sem</button>
+    <button class="phase-tab" id="tab-amig"  onclick="switchPhase('amig')">🟠 Amígdalas · 13–18 oct</button>
   </div>
   <div class="day-nav" id="day-nav"></div>
   <main id="main"></main>
@@ -176,20 +188,27 @@ main{padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 20px);max-width:56
         <input type="time" class="time-input" id="t-wake" value="07:00">
       </div>
       <div class="time-row">
-        <div><div class="time-row-label">🍳 Desayuno</div><div class="time-row-sub">Cobefen AM · Sterimar · Rino-Val · Oxiler</div></div>
+        <div><div class="time-row-label">🍳 Desayuno</div><div class="time-row-sub">Prednisona AM · Cobefen · Sterimar · Rino-Val</div></div>
         <input type="time" class="time-input" id="t-breakfast" value="07:30">
       </div>
       <div class="time-row">
-        <div><div class="time-row-label">🍽️ Almuerzo</div><div class="time-row-sub">Levoxin</div></div>
+        <div><div class="time-row-label">🍽️ Almuerzo</div><div class="time-row-sub">Levoxin · Ketoprofeno</div></div>
         <input type="time" class="time-input" id="t-lunch" value="12:30">
       </div>
       <div class="time-row">
-        <div><div class="time-row-label">🌆 Merienda</div><div class="time-row-sub">Referencia suplementos</div></div>
+        <div><div class="time-row-label">🌆 Merienda</div><div class="time-row-sub">Broncard 2ª dosis</div></div>
         <input type="time" class="time-input" id="t-snack" value="17:00">
       </div>
       <div class="time-row">
-        <div><div class="time-row-label">🌙 Cena</div><div class="time-row-sub">Cobefen PM · Sterimar · Rino-Val · Reax · Oxiler</div></div>
+        <div><div class="time-row-label">🌙 Cena</div><div class="time-row-sub">Prednisona PM · Cobefen · Sterimar · Rino-Val · Reax</div></div>
         <input type="time" class="time-input" id="t-dinner" value="21:00">
+      </div>
+    </div>
+    <div class="settings-section">
+      <h3>Ventana de dosis c/8h (amígdalas)</h3>
+      <div class="time-row">
+        <div><div class="time-row-label">🕤 Fin de ventana</div><div class="time-row-sub">Ketoprofeno · Broncard — última dosis del día. La del medio se calcula sola.</div></div>
+        <input type="time" class="time-input" id="t-window" value="23:00">
       </div>
     </div>
     <button class="save-settings-btn" onclick="saveSettings()">✓ Guardar horarios</button>
@@ -200,9 +219,10 @@ main{padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 20px);max-width:56
 <script>
 const STORAGE_KEY  = 'pastillero_jorge_pwa_v2';
 const SETTINGS_KEY = 'pastillero_settings_v2';
-const START        = new Date('2026-05-11T00:00:00');
+const START        = new Date('2026-05-11T00:00:00'); // Sinusitis mayo
+const START_AMIG   = new Date('2026-10-13T00:00:00'); // Amígdalas octubre
 
-let SCHED = { wake:'07:00', breakfast:'07:30', lunch:'12:30', snack:'17:00', dinner:'21:00' };
+let SCHED = { wake:'07:00', breakfast:'07:30', lunch:'12:30', snack:'17:00', dinner:'21:00', windowEnd:'23:00' };
 
 function fmt12(t) {
   const [h,m] = t.split(':').map(Number);
@@ -215,15 +235,12 @@ function buildMeds() {
   const W=SCHED.wake, B=SCHED.breakfast, L=SCHED.lunch, D=SCHED.dinner;
   const skW=sortKey(W), skB=sortKey(B), skL=sortKey(L), skD=sortKey(D)+1000;
   return [
-    // Día 2+ mañana (orden cronológico primero)
     {id:'omeprazol',   name:'Omeprazol 20 mg',              detail:'1 cáps. — 30 min antes desayuno',  tk:'Mañana · '+fmt12(W), sk:skW,    dur:10, tag:'tag-gp',  lb:'Gastroprotector',  sd:2},
     {id:'sterimar_am', name:'Sterimar',                     detail:'1 aplic. c/fosa nasal',             tk:'Mañana · '+fmt12(B), sk:skB,    dur:30, tag:'tag-sal', lb:'Sol. salina',       sd:2},
     {id:'cobefen_am',  name:'Cobefen',                      detail:'1 comp. con desayuno (c/12h)',       tk:'Mañana · '+fmt12(B), sk:skB+1,  dur:7,  tag:'tag-cah', lb:'Corticoide+AH',     sd:2},
     {id:'rinoval_am',  name:'Rino-Val (Mometasona)',        detail:'2 puff c/fosa — tras Sterimar',     tk:'Mañana · '+fmt12(B), sk:skB+2,  dur:84, tag:'tag-inh', lb:'Corticoide nasal',  sd:2},
     {id:'oxiler_am',   name:'Oxiler D (Oximetazolina)',     detail:'1 aplic. nasal — máx. 5 días',      tk:'Mañana · '+fmt12(B), sk:skB+3,  dur:5,  tag:'tag-dco', lb:'Descongestionante',  sd:2},
-    // Almuerzo
     {id:'levoxin',     name:'Levoxin 750 mg (Levofloxacino)',detail:'1 comp. con el almuerzo',           tk:'Almuerzo · '+fmt12(L),sk:skL,   dur:10, tag:'tag-atb', lb:'Antibiótico',        sd:2},
-    // Noche (desde día 1)
     {id:'cobefen_pm',  name:'Cobefen',                      detail:'1 comp. con la cena (c/12h)',        tk:'Noche · '+fmt12(D),  sk:skD,    dur:7,  tag:'tag-cah', lb:'Corticoide+AH',     sd:1},
     {id:'sterimar_pm', name:'Sterimar',                     detail:'1 aplic. c/fosa nasal',             tk:'Noche · '+fmt12(D),  sk:skD+1,  dur:30, tag:'tag-sal', lb:'Sol. salina',       sd:1},
     {id:'reax',        name:'Reax (Rupatadina 10 mg)',      detail:'1 comprimido',                       tk:'Noche · '+fmt12(D),  sk:skD+2,  dur:84, tag:'tag-ah',  lb:'Antihistamínico',   sd:1},
@@ -244,17 +261,56 @@ function buildLong() {
   ];
 }
 
-const PHASE_DAYS = {short:10, long:84};
+// Ventana c/8h: inicio (desayuno) → punto medio → fin de ventana
+function midTime(a,b){ const m=Math.round((sortKey(a)+sortKey(b))/2/15)*15; return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
 
-function getMedsForDay(ph, day) {
-  const defs = ph==='short' ? buildMeds() : buildLong();
-  return defs.filter(m=>{ const sd=m.sd||1, rel=day-sd+1; return rel>=1&&rel<=m.dur; }).sort((a,b)=>a.sk-b.sk);
+function buildAmig() {
+  // Día 1 = 13 oct: solo Ketoprofeno + Broncard de noche (21:00).
+  // Día 2 = 14 oct: parte Prednisona (c/12h) y el esquema c/8h completo (7:30 · 15:15 · 23:00).
+  const W=SCHED.wake, B=SCHED.breakfast, D=SCHED.dinner, E=SCHED.windowEnd||'23:00', M=midTime(B,E);
+  const skW=sortKey(W), skB=sortKey(B), skM=sortKey(M), skD=sortKey(D)+1000, skE=sortKey(E)+1000;
+  return [
+    // Mañana (desde día 2)
+    {id:'omeprazol_a',   name:'Omeprazol 20 mg',             detail:'1 cáps. — 30 min antes desayuno (gastroprotector)', tk:'Mañana · '+fmt12(W), sk:skW,   dur:5, tag:'tag-gp',   lb:'Gastroprotector', sd:2},
+    {id:'prednisona_am', name:'Prednisona 20 mg',            detail:'1 comp. con desayuno (1ª dosis c/12h)',             tk:'Mañana · '+fmt12(B), sk:skB,   dur:5, tag:'tag-cort', lb:'Corticoide',      sd:2},
+    {id:'ketoprofeno_am',name:'Ketoprofeno 50 mg',           detail:'1 comp. con desayuno (c/8h · 1ª del día)',          tk:'Mañana · '+fmt12(B), sk:skB+1, dur:3, tag:'tag-aines',lb:'AINE',            sd:2},
+    {id:'broncard_am',   name:'Broncard (Levodropropizina)', detail:'10 cc (c/8h · 1ª del día)',                         tk:'Mañana · '+fmt12(B), sk:skB+2, dur:5, tag:'tag-exp',  lb:'Antitusivo',      sd:2},
+    {id:'rinoval_am_m',  name:'Rino-Val (Mometasona)',       detail:'2 puff c/fosa — mantención sinusitis',              tk:'Mañana · '+fmt12(B), sk:skB+3, dur:5, tag:'tag-inh',  lb:'Corticoide nasal',sd:2},
+    // Tarde · punto medio de la ventana (desde día 2)
+    {id:'ketoprofeno_md',name:'Ketoprofeno 50 mg',           detail:'1 comp. con algo de comida (c/8h · 2ª del día)',    tk:'Tarde · '+fmt12(M),  sk:skM,   dur:3, tag:'tag-aines',lb:'AINE',            sd:2},
+    {id:'broncard_md',   name:'Broncard (Levodropropizina)', detail:'10 cc (c/8h · 2ª del día)',                         tk:'Tarde · '+fmt12(M),  sk:skM+1, dur:5, tag:'tag-exp',  lb:'Antitusivo',      sd:2},
+    // Cena (desde día 2): Prednisona 2ª dosis + mantención
+    {id:'prednisona_pm', name:'Prednisona 20 mg',            detail:'1 comp. con cena (2ª dosis c/12h)',                 tk:'Cena · '+fmt12(D),   sk:skD,   dur:5, tag:'tag-cort', lb:'Corticoide',      sd:2},
+    {id:'reax_m',        name:'Reax (Rupatadina 10 mg)',     detail:'1 comprimido — mantención sinusitis',               tk:'Cena · '+fmt12(D),   sk:skD+1, dur:6, tag:'tag-ah',   lb:'Antihistamínico', sd:1},
+    {id:'rinoval_pm_m',  name:'Rino-Val (Mometasona)',       detail:'2 puff c/fosa — mantención sinusitis',              tk:'Cena · '+fmt12(D),   sk:skD+2, dur:6, tag:'tag-inh',  lb:'Corticoide nasal',sd:1},
+    // Noche · fin de ventana. Día 1 fue a las 21:00; desde día 2 cierra la ventana (23:00)
+    {id:'ketoprofeno_pm',name:'Ketoprofeno 50 mg',           detail:'1 comp. con algo de comida (c/8h · 3ª del día)',    tk:'Noche · '+fmt12(E),  sk:skE,   dur:3, tag:'tag-aines',lb:'AINE',            sd:1},
+    {id:'broncard_pm',   name:'Broncard (Levodropropizina)', detail:'10 cc (c/8h · 3ª del día)',                         tk:'Noche · '+fmt12(E),  sk:skE+1, dur:5, tag:'tag-exp',  lb:'Antitusivo',      sd:1},
+  ];
 }
 
-let state={}, saveTimer=null, currentPhase='short', currentDay=todayDay();
+// Amígdalas: 6 días de calendario (13→18 oct) para completar 5 días de Broncard/Prednisona
+const PHASE_DAYS = {short:10, long:84, amig:6};
+const PHASE_STARTS = {short:START, long:START, amig:START_AMIG};
 
-function todayDay(){ const t=new Date(); t.setHours(0,0,0,0); const s=new Date(START); s.setHours(0,0,0,0); return Math.max(1,Math.floor((t-s)/86400000)+1); }
-function calDate(d){ const x=new Date(START); x.setDate(x.getDate()+d-1); return x; }
+function getMedsForDay(ph, day) {
+  const defs = ph==='short' ? buildMeds() : ph==='long' ? buildLong() : buildAmig();
+  const list = defs.filter(m=>{ const sd=m.sd||1, rel=day-sd+1; return rel>=1&&rel<=m.dur; }).sort((a,b)=>a.sk-b.sk);
+  // Día 1 amígdalas: la 1ª dosis real fue a las 21:00, no al cierre de ventana
+  if(ph==='amig'&&day===1) return list.map(m=>/^(ketoprofeno|broncard)/.test(m.id)?{...m, tk:'Noche · 9:00 PM (1ª dosis)'}:m);
+  return list;
+}
+
+let state={}, saveTimer=null, currentPhase='amig', currentDay=todayDay('amig');
+
+function todayDay(ph){
+  const t=new Date(); t.setHours(0,0,0,0);
+  const s=new Date(PHASE_STARTS[ph||currentPhase]); s.setHours(0,0,0,0);
+  return Math.max(1,Math.floor((t-s)/86400000)+1);
+}
+function calDate(ph,d){
+  const x=new Date(PHASE_STARTS[ph]); x.setDate(x.getDate()+d-1); return x;
+}
 function sk(ph,d,id){ return `${ph}_${d}_${id}`; }
 function isTaken(ph,d,id){ return !!state[sk(ph,d,id)]; }
 function toggleMed(ph,d,id){ state[sk(ph,d,id)]=!state[sk(ph,d,id)]; renderDay(ph,d); renderNav(ph); scheduleSave(); }
@@ -273,6 +329,7 @@ function openSettings(){
   document.getElementById('t-lunch').value=SCHED.lunch;
   document.getElementById('t-snack').value=SCHED.snack;
   document.getElementById('t-dinner').value=SCHED.dinner;
+  document.getElementById('t-window').value=SCHED.windowEnd||'23:00';
   document.getElementById('settings-panel').classList.add('open');
 }
 window.openSettings=openSettings;
@@ -284,20 +341,23 @@ function saveSettings(){
   SCHED.lunch=document.getElementById('t-lunch').value;
   SCHED.snack=document.getElementById('t-snack').value;
   SCHED.dinner=document.getElementById('t-dinner').value;
+  SCHED.windowEnd=document.getElementById('t-window').value;
   try{ localStorage.setItem(SETTINGS_KEY,JSON.stringify(SCHED)); }catch{}
   closeSettings(); renderNav(currentPhase); renderDay(currentPhase,currentDay); setSyncState('synced','guardado ✓');
 }
 window.saveSettings=saveSettings;
 
 function renderNav(ph){
-  const nav=document.getElementById('day-nav'), total=PHASE_DAYS[ph], today=todayDay();
+  const nav=document.getElementById('day-nav'), total=PHASE_DAYS[ph], today=todayDay(ph);
+  const isAmig=ph==='amig';
   nav.innerHTML='';
   for(let d=1;d<=total;d++){
-    const cd=calDate(d), dn=['D','L','M','X','J','V','S'];
-    const btn=document.createElement('button'); btn.className='day-btn';
+    const cd=calDate(ph,d), dn=['D','L','M','X','J','V','S'];
+    const btn=document.createElement('button');
+    btn.className='day-btn';
     btn.innerHTML=`<div style="font-size:0.58rem;opacity:0.7">${dn[cd.getDay()]}</div><div style="font-weight:600">${cd.getDate()}</div>`;
-    if(d===currentDay) btn.classList.add('active');
-    if(isComplete(ph,d)) btn.classList.add('complete');
+    if(d===currentDay){ btn.classList.add('active'); if(isAmig) btn.classList.add('amig-active'); }
+    if(isComplete(ph,d)){ btn.classList.add('complete'); if(isAmig) btn.classList.add('amig-done'); }
     if(d<today) btn.classList.add('past');
     if(d>today) btn.classList.add('future');
     btn.addEventListener('click',()=>{ currentDay=d; renderNav(ph); renderDay(ph,d); btn.scrollIntoView({behavior:'smooth',inline:'center'}); });
@@ -307,10 +367,11 @@ function renderNav(ph){
 }
 
 function renderDay(ph,day){
-  const main=document.getElementById('main'), cd=calDate(day);
+  const main=document.getElementById('main'), cd=calDate(ph,day);
   const meds=getMedsForDay(ph,day), {taken,total}=progress(ph,day);
   const pct=total?Math.round(taken/total*100):0, C=2*Math.PI*17, off=C-(pct/100)*C;
   const dateStr=cd.toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long'});
+  const isAmig=ph==='amig';
 
   let banners='';
   if(ph==='short'){
@@ -319,15 +380,21 @@ function renderDay(ph,day){
     if(day<=7)  banners+=`<div class="banner info">💊 <div><strong>Cobefen c/12h — Día ${day}/7.</strong> Siempre con comida.</div></div>`;
     if(day>=2)  banners+=`<div class="banner info">🔴 <div><strong>Levoxin — Día ${day-1}/10.</strong> Solo con almuerzo. Sin antiácidos, leche, zinc ni magnesio.</div></div>`;
   }
+  if(ph==='amig'){
+    if(day===1) banners+=`<div class="banner success">✅ <div><strong>Solo la 1ª dosis de anoche (21:00)</strong><br>Ketoprofeno + Broncard. Prednisona parte mañana.</div></div>`;
+    if(day>=2) banners+=`<div class="banner orange">🍊 <div><strong>Prednisona c/12h — Día ${day-1}/5.</strong> 20 mg fijos, desayuno y cena. Siempre con comida.</div></div>`;
+    if(day<=4) banners+=`<div class="banner info">🧴 <div><strong>Ketoprofeno c/8h — ${day===1?'inicio':`día ${day-1}/3`}.</strong> Con comida. Nada de ibuprofeno mientras dure.</div></div>`;
+    banners+=`<div class="banner warn">💧 <div><strong>Broncard c/8h — ${day===1?'inicio':`día ${day-1}/5`}.</strong> 10 cc = una cucharada sopera.</div></div>`;
+  }
 
   const groups={}, torder=[];
   meds.forEach(m=>{ if(!groups[m.tk]){groups[m.tk]=[];torder.push(m.tk);} groups[m.tk].push(m); });
 
   const groupsHtml=torder.map(t=>{
     const cards=groups[t].map(m=>{
-      const tk=isTaken(ph,day,m.id);
-      return `<div class="med-card ${tk?'taken':''}" onclick="toggleMed('${ph}',${day},'${m.id}')">
-        <div class="check">${tk?'✓':''}</div>
+      const tk2=isTaken(ph,day,m.id);
+      return `<div class="med-card ${tk2?'taken':''}" onclick="toggleMed('${ph}',${day},'${m.id}')">
+        <div class="check">${tk2?'✓':''}</div>
         <div class="med-info"><div class="med-name">${m.name}</div><div class="med-detail">${m.detail}</div></div>
         <span class="med-tag ${m.tag}">${m.lb}</span>
       </div>`;
@@ -335,8 +402,14 @@ function renderDay(ph,day){
     return `<div class="time-block"><div class="time-label">${t}</div>${cards}</div>`;
   }).join('');
 
-  const plClass=ph==='short'?'short':'long', plText=ph==='short'?'Tratamiento agudo · 10 días':'Mantención · 12 semanas';
+  let plClass, plText;
+  if(ph==='short'){ plClass='short'; plText='Tratamiento agudo · 10 días'; }
+  else if(ph==='long'){ plClass='long'; plText='Mantención · 12 semanas'; }
+  else { plClass='amig'; plText='Amígdalas · Dra. Matamala · 5 días'; }
+
   const icon=pct===100?'🏆':pct>=50?'💪':'⏳', txt=pct===100?'¡Día completo!':`${pct}% completado`;
+  const ringClass=isAmig?'ring-fg amig-ring':'ring-fg';
+  const ringTxtClass=isAmig?'ring-text amig-text':'ring-text';
 
   main.innerHTML=`
     <div class="day-header">
@@ -344,9 +417,9 @@ function renderDay(ph,day){
       <div class="ring-wrap">
         <svg width="46" height="46" viewBox="0 0 46 46">
           <circle class="ring-bg" cx="23" cy="23" r="17" stroke-dasharray="${C}" stroke-dashoffset="0"/>
-          <circle class="ring-fg" cx="23" cy="23" r="17" stroke-dasharray="${C}" stroke-dashoffset="${off}"/>
+          <circle class="${ringClass}" cx="23" cy="23" r="17" stroke-dasharray="${C}" stroke-dashoffset="${off}"/>
         </svg>
-        <div class="ring-text">${taken}/${total}</div>
+        <div class="${ringTxtClass}">${taken}/${total}</div>
       </div>
     </div>
     <span class="phase-label ${plClass}">${plText}</span>
@@ -363,7 +436,19 @@ function renderDay(ph,day){
 function resetDay(ph,day){ if(confirm(`¿Reiniciar día ${day}?`)){ getMedsForDay(ph,day).forEach(m=>{state[sk(ph,day,m.id)]=false;}); renderDay(ph,day); renderNav(ph); scheduleSave(); } }
 window.resetDay=resetDay;
 
-function switchPhase(ph){ currentPhase=ph; currentDay=Math.min(todayDay(),PHASE_DAYS[ph]); document.getElementById('tab-short').classList.toggle('active',ph==='short'); document.getElementById('tab-long').classList.toggle('active',ph==='long'); renderNav(ph); renderDay(ph,currentDay); }
+function switchPhase(ph){
+  currentPhase=ph;
+  currentDay=Math.min(todayDay(ph),PHASE_DAYS[ph]);
+  document.getElementById('tab-short').classList.toggle('active',ph==='short');
+  document.getElementById('tab-long').classList.toggle('active',ph==='long');
+  const tabAmig=document.getElementById('tab-amig');
+  tabAmig.classList.toggle('active',ph==='amig');
+  tabAmig.classList.toggle('amig',ph==='amig');
+  // Update header subtitle
+  const subs={short:'Sinusitis · Dra. Siso · inicio 11 mayo 2026', long:'Mantención · inicio 11 mayo 2026', amig:'Amígdalas · Dra. Matamala · inicio 13 oct 2026'};
+  document.getElementById('header-sub').textContent=subs[ph];
+  renderNav(ph); renderDay(ph,currentDay);
+}
 window.switchPhase=switchPhase;
 
 if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
@@ -371,8 +456,8 @@ if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.se
 load();
 setTimeout(()=>{ document.getElementById('loading').classList.add('hidden'); setTimeout(()=>document.getElementById('loading')?.remove(),400); },800);
 setSyncState('synced','guardado ✓');
-renderNav(currentPhase);
-renderDay(currentPhase,currentDay);
+// Iniciar en pestaña Amígdalas (tratamiento activo)
+switchPhase('amig');
 </script>
 </body>
 </html>
