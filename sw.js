@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pastillero-v4';
+const CACHE_NAME = 'pastillero-v5-amig';
 const ASSETS = [
   './index.html',
   './manifest.json',
