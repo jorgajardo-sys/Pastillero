@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pastillero-v6-rino';
+const CACHE_NAME = 'pastillero-v7';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -21,7 +21,21 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
+// index.html y navegaciones: red primero (para recibir actualizaciones), caché si no hay conexión.
+// Resto de recursos: caché primero.
 self.addEventListener('fetch', e => {
+  const url = new URL(e.request.url);
+  const isPage = e.request.mode === 'navigate' || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/');
+  if (isPage) {
+    e.respondWith(
+      fetch(e.request).then(res => {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then(c => c.put('./index.html', copy));
+        return res;
+      }).catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).catch(() => cached))
   );
