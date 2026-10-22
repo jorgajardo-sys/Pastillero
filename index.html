@@ -38,18 +38,22 @@ header p{font-size:0.72rem;color:var(--text2);margin-top:1px}
 
 .scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 
-.phase-tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
-.phase-tab{flex:1;padding:9px 4px;text-align:center;font-size:0.67rem;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text2);border-bottom:2px solid transparent;transition:all 0.2s;font-family:'Instrument Sans',sans-serif;line-height:1.3}
+.phase-tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;overflow-x:auto;scrollbar-width:none}
+.phase-tabs::-webkit-scrollbar{display:none}
+.phase-tab{flex:1 0 auto;min-width:33%;padding:9px 10px;text-align:center;font-size:0.67rem;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text2);border-bottom:2px solid transparent;transition:all 0.2s;font-family:'Instrument Sans',sans-serif;line-height:1.3}
 .phase-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 .phase-tab.active.amig{color:var(--orange);border-bottom-color:var(--orange)}
+.phase-tab.active.rino{color:#60a5fa;border-bottom-color:#60a5fa}
 
 .day-nav{display:flex;gap:6px;padding:10px 16px;overflow-x:auto;scrollbar-width:none;background:var(--surface2);border-bottom:1px solid var(--border);position:sticky;top:43px;z-index:40}
 .day-nav::-webkit-scrollbar{display:none}
 .day-btn{flex-shrink:0;min-width:44px;padding:7px 5px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-family:'Instrument Sans',sans-serif;font-size:0.7rem;cursor:pointer;transition:all 0.15s;color:var(--text2);text-align:center;line-height:1.4;position:relative}
 .day-btn.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);font-weight:600}
 .day-btn.active.amig-active{background:var(--orange-dim);border-color:var(--orange);color:var(--orange)}
+.day-btn.active.rino-active{background:#3b82f620;border-color:#60a5fa;color:#60a5fa}
 .day-btn.complete::after{content:'';position:absolute;top:-3px;right:-3px;width:10px;height:10px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)}
 .day-btn.complete.amig-done::after{background:var(--orange)}
+.day-btn.complete.rino-done::after{background:#60a5fa}
 .day-btn.past{opacity:0.5}
 .day-btn.future{opacity:0.35}
 
@@ -63,8 +67,10 @@ main{padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 20px);max-width:56
 .ring-bg{fill:none;stroke:var(--border);stroke-width:3}
 .ring-fg{fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round;transition:stroke-dashoffset 0.5s ease}
 .ring-fg.amig-ring{stroke:var(--orange)}
+.ring-fg.rino-ring{stroke:#60a5fa}
 .ring-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:600;color:var(--accent)}
 .ring-text.amig-text{color:var(--orange)}
+.ring-text.rino-text{color:#60a5fa}
 
 .summary{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:11px 13px;margin-bottom:14px;display:flex;align-items:center;gap:10px}
 .summary-icon{font-size:1.2rem}
@@ -81,6 +87,7 @@ main{padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 20px);max-width:56
 .phase-label.short{background:#3d1f0a44;color:#fb923c;border:1px solid #7c3a1566}
 .phase-label.long{background:#0f2d1a44;color:#4ade80;border:1px solid #22c55e44}
 .phase-label.amig{background:#3d1f0a44;color:#fb923c;border:1px solid #fb923c66}
+.phase-label.rino{background:#0d1f3d44;color:#60a5fa;border:1px solid #3b82f666}
 
 .time-block{margin-bottom:16px}
 .time-label{font-size:0.63rem;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--text2);margin-bottom:6px;padding-left:2px}
@@ -167,9 +174,10 @@ main{padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 20px);max-width:56
 
 <div class="scroll-area">
   <div class="phase-tabs">
-    <button class="phase-tab" id="tab-short" onclick="switchPhase('short')">🔴 Agudo · 10d</button>
-    <button class="phase-tab" id="tab-long"  onclick="switchPhase('long')">🟢 Mantención · 12sem</button>
+    <button class="phase-tab" id="tab-rino"  onclick="switchPhase('rino')">🔵 Rinofaringitis · 22 oct</button>
     <button class="phase-tab" id="tab-amig"  onclick="switchPhase('amig')">🟠 Amígdalas · 13–18 oct</button>
+    <button class="phase-tab" id="tab-short" onclick="switchPhase('short')">🔴 Sinusitis · may</button>
+    <button class="phase-tab" id="tab-long"  onclick="switchPhase('long')">🟢 Mantención · may–ago</button>
   </div>
   <div class="day-nav" id="day-nav"></div>
   <main id="main"></main>
@@ -188,26 +196,26 @@ main{padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 20px);max-width:56
         <input type="time" class="time-input" id="t-wake" value="07:00">
       </div>
       <div class="time-row">
-        <div><div class="time-row-label">🍳 Desayuno</div><div class="time-row-sub">Prednisona AM · Cobefen · Sterimar · Rino-Val</div></div>
+        <div><div class="time-row-label">🍳 Desayuno</div><div class="time-row-sub">Mometasona AM · Ibuprofeno 1ª</div></div>
         <input type="time" class="time-input" id="t-breakfast" value="07:30">
       </div>
       <div class="time-row">
-        <div><div class="time-row-label">🍽️ Almuerzo</div><div class="time-row-sub">Levoxin · Ketoprofeno</div></div>
+        <div><div class="time-row-label">🍽️ Almuerzo</div><div class="time-row-sub">(sin tomas en la fase actual)</div></div>
         <input type="time" class="time-input" id="t-lunch" value="12:30">
       </div>
       <div class="time-row">
-        <div><div class="time-row-label">🌆 Merienda</div><div class="time-row-sub">Broncard 2ª dosis</div></div>
+        <div><div class="time-row-label">🌆 Merienda</div><div class="time-row-sub">(referencia)</div></div>
         <input type="time" class="time-input" id="t-snack" value="17:00">
       </div>
       <div class="time-row">
-        <div><div class="time-row-label">🌙 Cena</div><div class="time-row-sub">Prednisona PM · Cobefen · Sterimar · Rino-Val · Reax</div></div>
+        <div><div class="time-row-label">🌙 Cena</div><div class="time-row-sub">Mometasona PM</div></div>
         <input type="time" class="time-input" id="t-dinner" value="21:00">
       </div>
     </div>
     <div class="settings-section">
-      <h3>Ventana de dosis c/8h (amígdalas)</h3>
+      <h3>Ventana de dosis c/8h</h3>
       <div class="time-row">
-        <div><div class="time-row-label">🕤 Fin de ventana</div><div class="time-row-sub">Ketoprofeno · Broncard — última dosis del día. La del medio se calcula sola.</div></div>
+        <div><div class="time-row-label">🕤 Fin de ventana</div><div class="time-row-sub">Ibuprofeno — última dosis del día. La del medio se calcula sola.</div></div>
         <input type="time" class="time-input" id="t-window" value="23:00">
       </div>
     </div>
@@ -221,6 +229,7 @@ const STORAGE_KEY  = 'pastillero_jorge_pwa_v2';
 const SETTINGS_KEY = 'pastillero_settings_v2';
 const START        = new Date('2026-05-11T00:00:00'); // Sinusitis mayo
 const START_AMIG   = new Date('2026-10-13T00:00:00'); // Amígdalas octubre
+const START_RINO   = new Date('2026-10-22T00:00:00'); // Rinofaringitis + rinitis alérgica (Dr. Farfán)
 
 let SCHED = { wake:'07:00', breakfast:'07:30', lunch:'12:30', snack:'17:00', dinner:'21:00', windowEnd:'23:00' };
 
@@ -289,19 +298,36 @@ function buildAmig() {
   ];
 }
 
-// Amígdalas: 6 días de calendario (13→18 oct) para completar 5 días de Broncard/Prednisona
-const PHASE_DAYS = {short:10, long:84, amig:6};
-const PHASE_STARTS = {short:START, long:START, amig:START_AMIG};
+function buildRino() {
+  // Día 1 = 22 oct (consulta a mediodía): parte con la toma de la tarde.
+  // Mometasona: c/12h días 1–11 (20 aplicaciones = 10 días), luego 1 puff/fosa cada mañana, permanente.
+  // Ibuprofeno 400: c/8h × 3 días = 9 dosis (tarde+noche día 1 · 3 los días 2–3 · mañana día 4).
+  const W=SCHED.wake, B=SCHED.breakfast, D=SCHED.dinner, E=SCHED.windowEnd||'23:00', M=midTime(B,E);
+  const skW=sortKey(W), skB=sortKey(B), skM=sortKey(M), skD=sortKey(D)+1000, skE=sortKey(E)+1000;
+  return [
+    {id:'omeprazol_r',   name:'Omeprazol 20 mg',           detail:'1 cáps. en ayunas — mientras dure el Ibuprofeno (recomendado)', tk:'Mañana · '+fmt12(W), sk:skW,   dur:3,  tag:'tag-gp',   lb:'Gastroprotector', sd:2},
+    {id:'mometasona_am', name:'Mometasona 50 mcg nasal',   detail:'1 puff por fosa — c/12h (días 1–10)',                          tk:'Mañana · '+fmt12(B), sk:skB,   dur:10, tag:'tag-inh',  lb:'Corticoide nasal',sd:2},
+    {id:'mometasona_mt', name:'Mometasona 50 mcg nasal',   detail:'1 puff por fosa cada mañana — mantención permanente',           tk:'Mañana · '+fmt12(B), sk:skB,   dur:999,tag:'tag-inh',  lb:'Corticoide nasal',sd:12},
+    {id:'ibuprofeno_am', name:'Ibuprofeno 400 mg',         detail:'1 comp. con desayuno (c/8h · 1ª del día)',                     tk:'Mañana · '+fmt12(B), sk:skB+1, dur:3,  tag:'tag-aines',lb:'AINE',            sd:2},
+    {id:'ibuprofeno_md', name:'Ibuprofeno 400 mg',         detail:'1 comp. con algo de comida (c/8h · 2ª del día)',               tk:'Tarde · '+fmt12(M),  sk:skM,   dur:3,  tag:'tag-aines',lb:'AINE',            sd:1},
+    {id:'mometasona_pm', name:'Mometasona 50 mcg nasal',   detail:'1 puff por fosa — c/12h (días 1–10)',                          tk:'Cena · '+fmt12(D),   sk:skD,   dur:10, tag:'tag-inh',  lb:'Corticoide nasal',sd:1},
+    {id:'ibuprofeno_pm', name:'Ibuprofeno 400 mg',         detail:'1 comp. con algo de comida (c/8h · 3ª del día)',               tk:'Noche · '+fmt12(E),  sk:skE,   dur:3,  tag:'tag-aines',lb:'AINE',            sd:1},
+  ];
+}
+
+// Amígdalas: 6 días de calendario (13→18 oct). Rinofaringitis: 10 días c/12h + mantención (se muestran 30 días).
+const PHASE_DAYS = {short:10, long:84, amig:6, rino:30};
+const PHASE_STARTS = {short:START, long:START, amig:START_AMIG, rino:START_RINO};
 
 function getMedsForDay(ph, day) {
-  const defs = ph==='short' ? buildMeds() : ph==='long' ? buildLong() : buildAmig();
+  const defs = ph==='short' ? buildMeds() : ph==='long' ? buildLong() : ph==='amig' ? buildAmig() : buildRino();
   const list = defs.filter(m=>{ const sd=m.sd||1, rel=day-sd+1; return rel>=1&&rel<=m.dur; }).sort((a,b)=>a.sk-b.sk);
   // Día 1 amígdalas: la 1ª dosis real fue a las 21:00, no al cierre de ventana
   if(ph==='amig'&&day===1) return list.map(m=>/^(ketoprofeno|broncard)/.test(m.id)?{...m, tk:'Noche · 9:00 PM (1ª dosis)'}:m);
   return list;
 }
 
-let state={}, saveTimer=null, currentPhase='amig', currentDay=todayDay('amig');
+let state={}, saveTimer=null, currentPhase='rino', currentDay=todayDay('rino');
 
 function todayDay(ph){
   const t=new Date(); t.setHours(0,0,0,0);
@@ -349,15 +375,15 @@ window.saveSettings=saveSettings;
 
 function renderNav(ph){
   const nav=document.getElementById('day-nav'), total=PHASE_DAYS[ph], today=todayDay(ph);
-  const isAmig=ph==='amig';
+  const acc=ph==='amig'?'amig':ph==='rino'?'rino':null;
   nav.innerHTML='';
   for(let d=1;d<=total;d++){
     const cd=calDate(ph,d), dn=['D','L','M','X','J','V','S'];
     const btn=document.createElement('button');
     btn.className='day-btn';
     btn.innerHTML=`<div style="font-size:0.58rem;opacity:0.7">${dn[cd.getDay()]}</div><div style="font-weight:600">${cd.getDate()}</div>`;
-    if(d===currentDay){ btn.classList.add('active'); if(isAmig) btn.classList.add('amig-active'); }
-    if(isComplete(ph,d)){ btn.classList.add('complete'); if(isAmig) btn.classList.add('amig-done'); }
+    if(d===currentDay){ btn.classList.add('active'); if(acc) btn.classList.add(acc+'-active'); }
+    if(isComplete(ph,d)){ btn.classList.add('complete'); if(acc) btn.classList.add(acc+'-done'); }
     if(d<today) btn.classList.add('past');
     if(d>today) btn.classList.add('future');
     btn.addEventListener('click',()=>{ currentDay=d; renderNav(ph); renderDay(ph,d); btn.scrollIntoView({behavior:'smooth',inline:'center'}); });
@@ -371,7 +397,7 @@ function renderDay(ph,day){
   const meds=getMedsForDay(ph,day), {taken,total}=progress(ph,day);
   const pct=total?Math.round(taken/total*100):0, C=2*Math.PI*17, off=C-(pct/100)*C;
   const dateStr=cd.toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long'});
-  const isAmig=ph==='amig';
+  const acc=ph==='amig'?'amig':ph==='rino'?'rino':null;
 
   let banners='';
   if(ph==='short'){
@@ -385,6 +411,13 @@ function renderDay(ph,day){
     if(day>=2) banners+=`<div class="banner orange">🍊 <div><strong>Prednisona c/12h — Día ${day-1}/5.</strong> 20 mg fijos, desayuno y cena. Siempre con comida.</div></div>`;
     if(day<=4) banners+=`<div class="banner info">🧴 <div><strong>Ketoprofeno c/8h — ${day===1?'inicio':`día ${day-1}/3`}.</strong> Con comida. Nada de ibuprofeno mientras dure.</div></div>`;
     banners+=`<div class="banner warn">💧 <div><strong>Broncard c/8h — ${day===1?'inicio':`día ${day-1}/5`}.</strong> 10 cc = una cucharada sopera.</div></div>`;
+  }
+  if(ph==='rino'){
+    if(day===1) banners+=`<div class="banner success">✅ <div><strong>Hoy parte en la tarde</strong><br>Ibuprofeno a las ${fmt12(midTime(SCHED.breakfast,SCHED.windowEnd||'23:00'))} y ${fmt12(SCHED.windowEnd||'23:00')}; Mometasona con la cena. Mañana arranca el esquema completo.</div></div>`;
+    if(day<=11) banners+=`<div class="banner info">💨 <div><strong>Mometasona c/12h — día ${Math.min(day,10)}/10.</strong> Agitar, cabeza recta, apuntar hacia fuera (no al tabique). Desde el ${calDate('rino',12).getDate()} de ${calDate('rino',12).toLocaleDateString('es-CL',{month:'long'})}: 1 puff por fosa solo en la mañana, permanente.</div></div>`;
+    else banners+=`<div class="banner info">💨 <div><strong>Mometasona — mantención permanente.</strong> 1 puff por fosa cada mañana. Pedir receta nueva antes de que se acabe (1 frasco/mes).</div></div>`;
+    if(day<=4) banners+=`<div class="banner warn">🧴 <div><strong>Ibuprofeno 400 c/8h — ${day===1?'inicio':`día ${day-1}/3`}.</strong> Siempre con comida. Buena hidratación. Nada de otro AINE a la vez.</div></div>`;
+    if(day<=3) banners+=`<div class="banner orange">🍯 <div><strong>Medidas generales:</strong> cucharadita de miel, reposo deportivo, hidratación abundante.</div></div>`;
   }
 
   const groups={}, torder=[];
@@ -405,11 +438,12 @@ function renderDay(ph,day){
   let plClass, plText;
   if(ph==='short'){ plClass='short'; plText='Tratamiento agudo · 10 días'; }
   else if(ph==='long'){ plClass='long'; plText='Mantención · 12 semanas'; }
-  else { plClass='amig'; plText='Amígdalas · Dra. Matamala · 5 días'; }
+  else if(ph==='amig'){ plClass='amig'; plText='Amígdalas · Dra. Matamala · 5 días'; }
+  else { plClass='rino'; plText=day<=11?'Rinofaringitis · Dr. Farfán · 10 días':'Rinitis alérgica · mantención'; }
 
   const icon=pct===100?'🏆':pct>=50?'💪':'⏳', txt=pct===100?'¡Día completo!':`${pct}% completado`;
-  const ringClass=isAmig?'ring-fg amig-ring':'ring-fg';
-  const ringTxtClass=isAmig?'ring-text amig-text':'ring-text';
+  const ringClass=acc?`ring-fg ${acc}-ring`:'ring-fg';
+  const ringTxtClass=acc?`ring-text ${acc}-text`:'ring-text';
 
   main.innerHTML=`
     <div class="day-header">
@@ -444,10 +478,13 @@ function switchPhase(ph){
   const tabAmig=document.getElementById('tab-amig');
   tabAmig.classList.toggle('active',ph==='amig');
   tabAmig.classList.toggle('amig',ph==='amig');
-  // Update header subtitle
-  const subs={short:'Sinusitis · Dra. Siso · inicio 11 mayo 2026', long:'Mantención · inicio 11 mayo 2026', amig:'Amígdalas · Dra. Matamala · inicio 13 oct 2026'};
+  const tabRino=document.getElementById('tab-rino');
+  tabRino.classList.toggle('active',ph==='rino');
+  tabRino.classList.toggle('rino',ph==='rino');
+  const subs={short:'Sinusitis · Dra. Siso · inicio 11 mayo 2026', long:'Mantención · inicio 11 mayo 2026', amig:'Amígdalas · Dra. Matamala · inicio 13 oct 2026', rino:'Rinofaringitis · Dr. Farfán · inicio 22 oct 2026'};
   document.getElementById('header-sub').textContent=subs[ph];
   renderNav(ph); renderDay(ph,currentDay);
+  setTimeout(()=>document.getElementById('tab-'+ph)?.scrollIntoView({inline:'center',block:'nearest'}),30);
 }
 window.switchPhase=switchPhase;
 
@@ -456,8 +493,8 @@ if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.se
 load();
 setTimeout(()=>{ document.getElementById('loading').classList.add('hidden'); setTimeout(()=>document.getElementById('loading')?.remove(),400); },800);
 setSyncState('synced','guardado ✓');
-// Iniciar en pestaña Amígdalas (tratamiento activo)
-switchPhase('amig');
+// Iniciar en la fase activa
+switchPhase('rino');
 </script>
 </body>
 </html>
