@@ -217,8 +217,8 @@ main{padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 20px);max-width:56
     <div class="settings-section">
       <h3>Ventana de dosis c/8h</h3>
       <div class="time-row">
-        <div><div class="time-row-label">🕤 Fin de ventana</div><div class="time-row-sub">Ibuprofeno 600 — última dosis del día. La del medio se calcula sola. Paracetamol usa la misma ventana.</div></div>
-        <input type="time" class="time-input" id="t-window" value="23:00">
+        <div><div class="time-row-label">🕤 Fin de ventana</div><div class="time-row-sub">Ibuprofeno 600 — última dosis del día. La del medio se calcula sola. Paracetamol va alternado: 12:00 · 20:00.</div></div>
+        <input type="time" class="time-input" id="t-window" value="00:00">
       </div>
     </div>
     <button class="save-settings-btn" onclick="saveSettings()">✓ Guardar horarios</button>
@@ -233,7 +233,7 @@ const START        = new Date('2026-05-11T00:00:00'); // Sinusitis mayo
 const START_AMIG   = new Date('2026-10-13T00:00:00'); // Amígdalas octubre
 const START_RINO   = new Date('2026-10-22T00:00:00'); // Rinofaringitis + rinitis alérgica (Dr. Farfán)
 
-let SCHED = { wake:'07:30', breakfast:'08:00', lunch:'12:30', snack:'17:00', dinner:'21:00', windowEnd:'23:00' };
+let SCHED = { wake:'07:30', breakfast:'08:00', lunch:'12:30', snack:'17:00', dinner:'21:00', windowEnd:'00:00' };
 
 function fmt12(t) {
   const [h,m] = t.split(':').map(Number);
@@ -241,6 +241,8 @@ function fmt12(t) {
   return `${h12}:${String(m).padStart(2,'0')} ${ap}`;
 }
 function sortKey(t) { const [h,m]=t.split(':').map(Number); return h*60+m; }
+// Fin de ventana: '00:00' significa medianoche (24:00)
+function endKey(t){ const k=sortKey(t); return k===0?1440:k; }
 
 function buildMeds() {
   const W=SCHED.wake, B=SCHED.breakfast, L=SCHED.lunch, D=SCHED.dinner;
@@ -273,13 +275,13 @@ function buildLong() {
 }
 
 // Ventana c/8h: inicio (desayuno) → punto medio → fin de ventana
-function midTime(a,b){ const m=Math.round((sortKey(a)+sortKey(b))/2/15)*15; return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
+function midTime(a,b){ const m=Math.round((sortKey(a)+endKey(b))/2/15)*15; return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
 
 function buildAmig() {
   // Día 1 = 13 oct: solo Ketoprofeno + Broncard de noche (21:00).
   // Día 2 = 14 oct: parte Prednisona (c/12h) y el esquema c/8h completo (7:30 · 15:15 · 23:00).
-  const W=SCHED.wake, B=SCHED.breakfast, D=SCHED.dinner, E=SCHED.windowEnd||'23:00', M=midTime(B,E);
-  const skW=sortKey(W), skB=sortKey(B), skM=sortKey(M), skD=sortKey(D)+1000, skE=sortKey(E)+1000;
+  const W=SCHED.wake, B=SCHED.breakfast, D=SCHED.dinner, E=SCHED.windowEnd||'00:00', M=midTime(B,E);
+  const skW=sortKey(W), skB=sortKey(B), skM=sortKey(M), skD=sortKey(D)+1000, skE=endKey(E)+1000;
   return [
     // Mañana (desde día 2)
     {id:'omeprazol_a',   name:'Omeprazol 20 mg',             detail:'1 cáps. — 30 min antes desayuno (gastroprotector)', tk:'Mañana · '+fmt12(W), sk:skW,   dur:5, tag:'tag-gp',   lb:'Gastroprotector', sd:2},
@@ -304,14 +306,14 @@ function buildRino() {
   // Día 1 = 22 oct (consulta a mediodía): parte con la toma de la tarde.
   // Mometasona: c/12h días 1–11 (20 aplicaciones = 10 días), luego 1 puff/fosa cada mañana, permanente.
   // Ibuprofeno 400: c/8h × 3 días = 9 dosis (tarde+noche día 1 · 3 los días 2–3 · mañana día 4).
-  const W=SCHED.wake, B=SCHED.breakfast, D=SCHED.dinner, E=SCHED.windowEnd||'23:00', M=midTime(B,E);
-  const skW=sortKey(W), skB=sortKey(B), skM=sortKey(M), skD=sortKey(D)+1000, skE=sortKey(E)+1000;
+  const W=SCHED.wake, B=SCHED.breakfast, D=SCHED.dinner, E=SCHED.windowEnd||'00:00', M=midTime(B,E);
+  const skW=sortKey(W), skB=sortKey(B), skM=sortKey(M), skD=sortKey(D)+1000, skE=endKey(E)+1000;
   return [
     {id:'omeprazol_r',   name:'Omeprazol 20 mg',           detail:'1 cáps. en ayunas — mientras dure el Ibuprofeno (recomendado)', tk:'Mañana · '+fmt12(W), sk:skW,   dur:4,  tag:'tag-gp',   lb:'Gastroprotector', sd:2},
     {id:'mometasona_am', name:'Mometasona 50 mcg nasal',   detail:'1 puff por fosa — c/12h (días 1–10)',                          tk:'Mañana · '+fmt12(B), sk:skB,   dur:10, tag:'tag-inh',  lb:'Corticoide nasal',sd:2},
     {id:'mometasona_mt', name:'Mometasona 50 mcg nasal',   detail:'1 puff por fosa cada mañana — mantención permanente',           tk:'Mañana · '+fmt12(B), sk:skB,   dur:999,tag:'tag-inh',  lb:'Corticoide nasal',sd:12},
     // Día 1 (22 oct): Ibuprofeno. Desde día 2 (23 oct): Paracetamol c/8h + Celecoxib c/12h, 3 días.
-    {id:'paracetamol_1', name:'Paracetamol (Xumadol) 1 g',  detail:'1 sobre con desayuno (c/8h · 1ª del día)',                     tk:'Mañana · '+fmt12(B), sk:skB-1, dur:3,  tag:'tag-para', lb:'Analgésico',      sd:2},
+    {id:'paracetamol_1', name:'Paracetamol (Xumadol) 1 g',  detail:'Opcional: solo si despiertas con dolor (≥ 4 h tras el ibuprofeno de medianoche)', tk:'Madrugada · desde 4:00 AM',sk:240, dur:3,  tag:'tag-para', lb:'Analgésico',      sd:2},
     {id:'xumer',         name:'Xumer 120 mg (Etoricoxib)',  detail:'1 comp. con desayuno — solo hoy (si no lo tomaste, salta)',   tk:'Mañana · '+fmt12(B), sk:skB+1, dur:1,  tag:'tag-aines',lb:'AINE (COX-2)',    sd:2},
     {id:'amox_am',       name:'Amoxicilina/Clavulánico 875/125', detail:'1 comp. con desayuno (c/12h · hasta el 30 oct)',          tk:'Mañana · '+fmt12(B), sk:skB+2, dur:7,  tag:'tag-atb',  lb:'Antibiótico',     sd:3},
     {id:'ibu600_am',     name:'Ibuprofeno 600 mg',           detail:'1 comp. con desayuno (c/8h · 1ª del día)',                     tk:'Mañana · '+fmt12(B), sk:skB+3, dur:3,  tag:'tag-aines',lb:'AINE',            sd:3},
@@ -319,10 +321,10 @@ function buildRino() {
     {id:'amox_first',    name:'Amoxicilina/Clavulánico 875/125', detail:'1ª dosis — tomada al salir de la consulta',               tk:'Tarde · 4:30 PM',    sk:990,   dur:1,  tag:'tag-atb',  lb:'Antibiótico',     sd:2},
     {id:'amox_pm',       name:'Amoxicilina/Clavulánico 875/125', detail:'1 comp. con la cena (c/12h · hasta el 29 oct)',           tk:'Cena · '+fmt12(D),   sk:skD+1, dur:6,  tag:'tag-atb',  lb:'Antibiótico',     sd:3},
     {id:'ibu600_pm',     name:'Ibuprofeno 600 mg',           detail:'1 comp. con algo de comida (c/8h · 3ª del día)',               tk:'Noche · '+fmt12(E),  sk:skE,   dur:3,  tag:'tag-aines',lb:'AINE',            sd:3},
-    {id:'paracetamol_2', name:'Paracetamol (Xumadol) 1 g',  detail:'1 sobre (c/8h · 2ª del día)',                                  tk:'Tarde · '+fmt12(M),  sk:skM-1, dur:3,  tag:'tag-para', lb:'Analgésico',      sd:2},
+    {id:'paracetamol_2', name:'Paracetamol (Xumadol) 1 g',  detail:'1 sobre — entre los dos ibuprofenos',                          tk:'Mediodía · 12:00 PM',sk:720,   dur:3,  tag:'tag-para', lb:'Analgésico',      sd:2},
     {id:'ibuprofeno_md', name:'Ibuprofeno 400 mg',         detail:'1 comp. con algo de comida (c/8h · 2ª del día)',               tk:'Tarde · '+fmt12(M),  sk:skM,   dur:1,  tag:'tag-aines',lb:'AINE',            sd:1},
     {id:'mometasona_pm', name:'Mometasona 50 mcg nasal',   detail:'1 puff por fosa — c/12h (días 1–10)',                          tk:'Cena · '+fmt12(D),   sk:skD,   dur:10, tag:'tag-inh',  lb:'Corticoide nasal',sd:1},
-    {id:'paracetamol_3', name:'Paracetamol (Xumadol) 1 g',  detail:'1 sobre (c/8h · 3ª del día)',                                  tk:'Noche · '+fmt12(E),  sk:skE-1, dur:3,tag:'tag-para', lb:'Analgésico',      sd:2},
+    {id:'paracetamol_3', name:'Paracetamol (Xumadol) 1 g',  detail:'1 sobre — entre el ibuprofeno de las 16 y el de medianoche (hoy 23: a las 23:00)', tk:'Noche · 8:00 PM', sk:1200, dur:3,tag:'tag-para', lb:'Analgésico',      sd:2},
     {id:'ibuprofeno_pm', name:'Ibuprofeno 400 mg',         detail:'1 comp. con algo de comida (c/8h · 3ª del día)',               tk:'Noche · '+fmt12(E),  sk:skE,   dur:1,  tag:'tag-aines',lb:'AINE',            sd:1},
   ];
 }
@@ -367,7 +369,7 @@ function openSettings(){
   document.getElementById('t-lunch').value=SCHED.lunch;
   document.getElementById('t-snack').value=SCHED.snack;
   document.getElementById('t-dinner').value=SCHED.dinner;
-  document.getElementById('t-window').value=SCHED.windowEnd||'23:00';
+  document.getElementById('t-window').value=SCHED.windowEnd||'00:00';
   document.getElementById('settings-panel').classList.add('open');
 }
 window.openSettings=openSettings;
@@ -425,12 +427,12 @@ function renderDay(ph,day){
     banners+=`<div class="banner warn">💧 <div><strong>Broncard c/8h — ${day===1?'inicio':`día ${day-1}/5`}.</strong> 10 cc = una cucharada sopera.</div></div>`;
   }
   if(ph==='rino'){
-    if(day===1) banners+=`<div class="banner success">✅ <div><strong>Hoy parte en la tarde</strong><br>Ibuprofeno a las ${fmt12(midTime(SCHED.breakfast,SCHED.windowEnd||'23:00'))} y ${fmt12(SCHED.windowEnd||'23:00')}; Mometasona con la cena. Mañana arranca el esquema completo.</div></div>`;
+    if(day===1) banners+=`<div class="banner success">✅ <div><strong>Hoy parte en la tarde</strong><br>Ibuprofeno a las ${fmt12(midTime(SCHED.breakfast,SCHED.windowEnd||'00:00'))} y ${fmt12(SCHED.windowEnd||'00:00')}; Mometasona con la cena. Mañana arranca el esquema completo.</div></div>`;
     if(day<=11) banners+=`<div class="banner info">💨 <div><strong>Mometasona c/12h — día ${Math.min(day,10)}/10.</strong> Agitar, cabeza recta, apuntar hacia fuera (no al tabique). Desde el ${calDate('rino',12).getDate()} de ${calDate('rino',12).toLocaleDateString('es-CL',{month:'long'})}: 1 puff por fosa solo en la mañana, permanente.</div></div>`;
     else banners+=`<div class="banner info">💨 <div><strong>Mometasona — mantención permanente.</strong> 1 puff por fosa cada mañana. Pedir receta nueva antes de que se acabe (1 frasco/mes).</div></div>`;
     if(day===1) banners+=`<div class="banner warn">🧴 <div><strong>Ibuprofeno 400 — solo hoy.</strong> Desde mañana se reemplaza por Paracetamol + Celecoxib.</div></div>`;
     if(day>=2&&day<=9) banners+=`<div class="banner orange">🦠 <div><strong>Amoxicilina/Clavulánico c/12h — día ${day-1}/8.</strong> Siempre con comida. Completar los 14 comprimidos aunque te sientas bien el día 3. Sin alcohol. Si da diarrea, yogur/probiótico separado 2 h del antibiótico.</div></div>`;
-    if(day>=2&&day<=4) banners+=`<div class="banner warn">🧴 <div><strong>Paracetamol (Xumadol) 1 g c/8h — día ${day-1}/3.</strong> Máx. 3 g/día. Hoy 23: ya tomado a las 6 y 14; la 3ª a las 23:00.</div></div>`;
+    if(day>=2&&day<=4) banners+=`<div class="banner warn">🧴 <div><strong>Paracetamol 1 g alternado con Ibuprofeno — día ${day-1}/3.</strong> Ibuprofeno 8:00 · 16:00 · 00:00; Paracetamol 12:00 · 20:00 (+ opcional de madrugada si hay dolor). Siempre ≥ 4 h entre analgésicos. Paracetamol máx. 3 g/día.</div></div>`;
     if(day>=3&&day<=5) banners+=`<div class="banner warn">🧴 <div><strong>Ibuprofeno 600 c/8h — día ${day-2}/3.</strong> Con comida. Nunca junto con Xumer ni otro AINE.</div></div>`;
     if(day>=2&&day<=5) banners+=`<div class="banner danger">🚨 <div><strong>Urgencias si:</strong> dolor solo a un lado, dificultad para abrir la boca, voz "de papa caliente", babeo, dificultad para respirar, o fiebre que no cede tras 48–72 h de antibiótico. Erupción en la piel = suspender y consultar.</div></div>`;
     if(day<=3) banners+=`<div class="banner orange">🍯 <div><strong>Medidas generales:</strong> cucharadita de miel, reposo deportivo, hidratación abundante.</div></div>`;
