@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pastillero-v7';
+const CACHE_NAME = 'pastillero-v8';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -25,6 +25,8 @@ self.addEventListener('activate', e => {
 // Resto de recursos: caché primero.
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
+  // Google (login + Calendar API) y cualquier petición que no sea GET: directo a la red, sin caché.
+  if (e.request.method !== 'GET' || /googleapis\.com$|accounts\.google\.com$|gstatic\.com$/.test(url.hostname)) return;
   const isPage = e.request.mode === 'navigate' || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/');
   if (isPage) {
     e.respondWith(
