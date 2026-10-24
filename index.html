@@ -10,6 +10,7 @@
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="./icons/icon-192.png">
 <title>Pastillero · Jorge</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@300;600&family=Instrument+Sans:wght@400;500;600&display=swap');
 
@@ -171,6 +172,11 @@ main{padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 20px);max-width:56
 .loading-fill{height:100%;background:var(--accent);border-radius:2px;animation:fill 1s ease forwards}
 @keyframes fill{from{width:0}to{width:100%}}
 .no-meds{text-align:center;padding:40px 20px;color:var(--text2);font-size:0.86rem}
+.gc-status{font-size:0.75rem;color:var(--text2);margin-top:8px;line-height:1.5;white-space:pre-line}
+.gc-status.ok{color:var(--accent)} .gc-status.err{color:var(--danger)}
+.gc-row{display:flex;gap:8px;margin-top:8px}
+.gc-row .btn{padding:11px}
+.settings-btn.busy{animation:blink 1s infinite}
 </style>
 </head>
 <body>
@@ -192,6 +198,7 @@ main{padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 20px);max-width:56
         <div class="sync-dot synced" id="sync-dot"></div>
         <span id="sync-text">guardado</span>
       </div>
+      <div class="settings-btn" id="gc-quick" onclick="gcQuickSync()" title="Sincronizar con Google Calendar">☁️</div>
       <div class="settings-btn" onclick="openSettings()">⚙️</div>
     </div>
   </div>
@@ -211,7 +218,7 @@ main{padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 20px);max-width:56
 <div class="settings-panel" id="settings-panel">
   <div class="settings-header">
     <div class="back-btn" onclick="closeSettings()">←</div>
-    <h2>⚙️ Horarios</h2>
+    <h2>⚙️ Ajustes</h2>
   </div>
   <div class="settings-scroll">
     <div class="settings-section">
@@ -247,6 +254,18 @@ main{padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 20px);max-width:56
     <button class="save-settings-btn" onclick="saveSettings()">✓ Guardar horarios</button>
     <button class="reset-btn" style="margin-top:18px" onclick="resetExtras()">↺ Restablecer ajustes manuales y tomas agregadas</button>
     <p class="settings-note">Los cambios se aplican inmediatamente y se guardan en tu dispositivo.</p>
+
+    <div class="settings-section" style="margin-top:28px">
+      <h3>☁️ Google Calendar</h3>
+      <div class="field"><label>Client ID de Google (OAuth)</label><input type="text" id="gc-client" placeholder="xxxxxxxx.apps.googleusercontent.com" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
+      <div class="field"><label>Calendario de destino</label><select id="gc-cal"><option value="">— Conecta para elegir —</option></select></div>
+      <div class="gc-row">
+        <button class="btn" onclick="gcConnect()">🔗 Conectar</button>
+        <button class="btn primary" onclick="gcSync()">☁️ Sincronizar ahora</button>
+      </div>
+      <div class="gc-status" id="gc-status">Sin configurar.</div>
+      <p class="settings-note" style="text-align:left;margin-top:10px">Sincroniza las tomas pendientes de los próximos 30 días tal como están en la app (incluidas tus ediciones): crea las que faltan, corrige las que cambiaron de hora y borra las que ya no existen. Solo toca eventos creados por la app. El botón ☁️ de la cabecera hace lo mismo con un toque.</p>
+    </div>
   </div>
 </div>
 
@@ -528,6 +547,7 @@ function openSettings(){
   document.getElementById('t-snack').value=SCHED.snack;
   document.getElementById('t-dinner').value=SCHED.dinner;
   document.getElementById('t-window').value=SCHED.windowEnd||'00:00';
+  gcFillUI();
   document.getElementById('settings-panel').classList.add('open');
 }
 window.openSettings=openSettings;
@@ -666,9 +686,123 @@ function switchPhase(ph){
 }
 window.switchPhase=switchPhase;
 
+/* ---------- GOOGLE CALENDAR ---------- */
+const GCAL_KEY='pastillero_gcal_v1', GC_SCOPES='https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly';
+const ACTIVE_PHASE='rino', GC_HORIZON=30, GC_TZ=(Intl.DateTimeFormat().resolvedOptions().timeZone)||'America/Santiago';
+let GC={clientId:'',calId:'',calName:'',lastSync:null}, gcToken=null, gcTokenExp=0, gcBusy=false;
+function gcLoad(){ try{ GC={...GC,...JSON.parse(localStorage.getItem(GCAL_KEY)||'{}')}; }catch{} }
+function gcSave(){ try{ localStorage.setItem(GCAL_KEY,JSON.stringify(GC)); }catch{} }
+function gcStatus(msg,cls){ const el=document.getElementById('gc-status'); if(el){ el.textContent=msg; el.className='gc-status'+(cls?' '+cls:''); } }
+function gcFillUI(){
+  const c=document.getElementById('gc-client'); if(c) c.value=GC.clientId||'';
+  const s=document.getElementById('gc-cal');
+  if(s && GC.calId && !s.querySelector(`option[value="${GC.calId}"]`)){ const o=document.createElement('option'); o.value=GC.calId; o.textContent=GC.calName||GC.calId; s.appendChild(o); }
+  if(s) s.value=GC.calId||'';
+  if(GC.lastSync) gcStatus(`Última sincronización: ${new Date(GC.lastSync).toLocaleString('es-CL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} → ${GC.calName||'calendario'}`,'ok');
+  else if(!GC.clientId) gcStatus('Sin configurar. Pega el Client ID y toca Conectar.');
+}
+function gcReadClient(){ const c=document.getElementById('gc-client'); if(c){ const v=c.value.trim(); if(v!==GC.clientId){ GC.clientId=v; gcToken=null; gcSave(); } } }
+function gcGetToken(){
+  return new Promise((res,rej)=>{
+    if(gcToken && Date.now()<gcTokenExp-60000) return res(gcToken);
+    if(!GC.clientId) return rej(new Error('Falta el Client ID de Google.'));
+    if(!(window.google&&google.accounts&&google.accounts.oauth2)) return rej(new Error('No cargó la librería de Google. Revisa la conexión y vuelve a intentar.'));
+    try{
+      const tc=google.accounts.oauth2.initTokenClient({client_id:GC.clientId, scope:GC_SCOPES,
+        callback:r=>{ if(r.error) return rej(new Error(r.error_description||r.error)); gcToken=r.access_token; gcTokenExp=Date.now()+((r.expires_in||3600)*1000); res(gcToken); },
+        error_callback:e=>rej(new Error(e&&e.type==='popup_closed'?'Cerraste la ventana de Google.':(e&&e.message)||'No se pudo abrir la ventana de Google.'))});
+      tc.requestAccessToken({prompt:''});
+    }catch(e){ rej(e); }
+  });
+}
+async function gcFetch(path,opts){
+  opts=opts||{};
+  const tok=await gcGetToken();
+  const r=await fetch('https://www.googleapis.com/calendar/v3'+path,{...opts,headers:{...(opts.headers||{}),Authorization:'Bearer '+tok,'Content-Type':'application/json'}});
+  if(r.status===204) return null;
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok){ if(r.status===401) gcToken=null; throw new Error((j.error&&j.error.message)||('HTTP '+r.status)); }
+  return j;
+}
+async function gcConnect(){
+  gcReadClient();
+  try{
+    gcStatus('Conectando con Google…');
+    const l=await gcFetch('/users/me/calendarList?minAccessRole=writer&maxResults=250');
+    const items=(l.items||[]).sort((a,b)=>(b.primary?1:0)-(a.primary?1:0));
+    const s=document.getElementById('gc-cal'); s.innerHTML='';
+    items.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.summary+(c.primary?' (principal)':''); s.appendChild(o); });
+    const pick=items.find(c=>c.id===GC.calId)||items.find(c=>/salud/i.test(c.summary||''))||items[0];
+    if(pick){ s.value=pick.id; GC.calId=pick.id; GC.calName=pick.summary; gcSave(); }
+    s.onchange=()=>{ GC.calId=s.value; GC.calName=s.options[s.selectedIndex].textContent; gcSave(); };
+    gcStatus(`Conectado. ${items.length} calendario(s) disponibles. Elegido: ${GC.calName}.`,'ok');
+  }catch(e){ gcStatus('Error: '+e.message,'err'); }
+}
+window.gcConnect=gcConnect;
+function gcLocalISO(d){ const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:00`; }
+// Plan: una entrada por (día, hora) con las tomas pendientes, desde hoy, 30 días
+function gcBuildPlan(){
+  const ph=ACTIVE_PHASE, today=todayDay(ph), last=Math.min(PHASE_DAYS[ph],today+GC_HORIZON-1), plan={};
+  for(let day=today; day<=last; day++){
+    const groups={};
+    getMedsForDay(ph,day).forEach(m=>{ if(!m.t||isTaken(ph,day,m.id)) return; (groups[m.t]=groups[m.t]||[]).push(m); });
+    Object.keys(groups).forEach(t=>{
+      const ms=groups[t], key=`${ph}_${day}_${t.replace(':','')}`;
+      const start=calDate(ph,day); const [h,mi]=t.split(':').map(Number);
+      if(endKey(t)===1440) start.setDate(start.getDate()+1);
+      start.setHours(h,mi,0,0); const end=new Date(start.getTime()+10*60000);
+      const icon=ms.every(m=>m.tag==='tag-inh')?'💨':'💊';
+      const short=n=>n.replace(/\s*\(.*?\)\s*/g,' ').replace('Amoxicilina/Clavulánico','Amoxi-clav').replace(/\s+/g,' ').trim();
+      const summary=`${icon} ${fmt12(t)} · ${ms.map(m=>short(m.name)).join(' + ')}`;
+      const description=ms.map(m=>`• ${m.name}${m.detail?' — '+m.detail:''}`).join('\n')+'\n\n(Pastillero · día '+day+')';
+      plan[key]={_ts:start.getTime(),summary,description,start:{dateTime:gcLocalISO(start),timeZone:GC_TZ},end:{dateTime:gcLocalISO(end),timeZone:GC_TZ},
+        transparency:'transparent',reminders:{useDefault:false,overrides:[{method:'popup',minutes:0}]},
+        extendedProperties:{private:{pastillero:'1',pkey:key}}};
+    });
+  }
+  return plan;
+}
+function gcBody(b){ const {_ts,...rest}=b; return JSON.stringify(rest); }
+async function gcPool(tasks,n){ let i=0; const w=async()=>{ while(i<tasks.length){ const t=tasks[i++]; await t(); } }; await Promise.all(Array.from({length:Math.min(n,tasks.length)},w)); }
+async function gcSync(){
+  if(gcBusy) return; gcReadClient();
+  if(!GC.clientId){ gcStatus('Falta el Client ID. Pégalo arriba y toca Conectar.','err'); return; }
+  if(!GC.calId){ gcStatus('Elige el calendario de destino (toca Conectar).','err'); return; }
+  gcBusy=true; document.getElementById('gc-quick')?.classList.add('busy');
+  const cal=encodeURIComponent(GC.calId);
+  try{
+    gcStatus('Leyendo eventos actuales…');
+    const d0=new Date(); d0.setHours(0,0,0,0);
+    let existing=[], pageToken='';
+    do{
+      const q=`/calendars/${cal}/events?privateExtendedProperty=pastillero%3D1&timeMin=${encodeURIComponent(d0.toISOString())}&singleEvents=true&maxResults=2500&showDeleted=false${pageToken?'&pageToken='+pageToken:''}`;
+      const r=await gcFetch(q); existing=existing.concat(r.items||[]); pageToken=r.nextPageToken||'';
+    }while(pageToken);
+    const byKey={}; existing.forEach(ev=>{ const k=ev.extendedProperties&&ev.extendedProperties.private&&ev.extendedProperties.private.pkey; if(k) byKey[k]=ev; });
+    const plan=gcBuildPlan(), tasks=[]; let created=0,updated=0,deleted=0,same=0, done=0;
+    const tick=()=>{ done++; gcStatus(`Sincronizando… ${done}/${tasks.length}`); };
+    Object.keys(plan).forEach(k=>{
+      const body=plan[k], ev=byKey[k];
+      if(!ev){ tasks.push(async()=>{ await gcFetch(`/calendars/${cal}/events`,{method:'POST',body:gcBody(body)}); created++; tick(); }); return; }
+      const sameTime=Math.abs(new Date(ev.start.dateTime).getTime()-body._ts)<60000;
+      if(ev.summary===body.summary && (ev.description||'')===body.description && sameTime){ same++; return; }
+      tasks.push(async()=>{ await gcFetch(`/calendars/${cal}/events/${encodeURIComponent(ev.id)}`,{method:'PATCH',body:gcBody(body)}); updated++; tick(); });
+    });
+    Object.keys(byKey).forEach(k=>{ if(plan[k]) return; const ev=byKey[k]; tasks.push(async()=>{ await gcFetch(`/calendars/${cal}/events/${encodeURIComponent(ev.id)}`,{method:'DELETE'}); deleted++; tick(); }); });
+    if(tasks.length) gcStatus(`Sincronizando… 0/${tasks.length}`);
+    await gcPool(tasks,4);
+    GC.lastSync=Date.now(); gcSave();
+    gcStatus(`Listo → ${GC.calName}\n${created} creados · ${updated} actualizados · ${deleted} borrados · ${same} sin cambios`,'ok');
+  }catch(e){ gcStatus('Error: '+e.message,'err'); }
+  finally{ gcBusy=false; document.getElementById('gc-quick')?.classList.remove('busy'); }
+}
+window.gcSync=gcSync;
+function gcQuickSync(){ if(!GC.clientId||!GC.calId){ openSettings(); gcStatus('Configura primero Google Calendar (Client ID y Conectar).','err'); return; } openSettings(); gcSync(); }
+window.gcQuickSync=gcQuickSync;
+
 if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 
-load(); loadExtras(); migrate();
+load(); loadExtras(); migrate(); gcLoad();
 setTimeout(()=>{ document.getElementById('loading').classList.add('hidden'); setTimeout(()=>document.getElementById('loading')?.remove(),400); },800);
 setSyncState('synced','guardado ✓');
 // Iniciar en la fase activa
