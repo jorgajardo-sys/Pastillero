@@ -413,9 +413,10 @@ function editMed(ph,day,id){
     <div class="modal-actions">
       <button class="btn" onclick="closeModal()">Cancelar</button>
       ${m.custom?`<button class="btn danger" onclick="deleteCustom('${id}')">Eliminar</button>`:''}
+      <button class="btn" onclick="duplicateMed('${ph}',${day},'${id}')">⧉ Duplicar</button>
       <button class="btn primary" onclick="saveEdit('${ph}',${day},'${id}')">Guardar</button>
     </div>
-    <p class="modal-note">"Desde hoy en adelante" no toca los días anteriores. Puedes volver a editar cuando quieras; el último ajuste manda. ${m.custom?'':'Para volver al horario original, usa ⚙️ → Restablecer ajustes.'}</p>`);
+    <p class="modal-note">"Desde hoy en adelante" no toca los días anteriores. Puedes volver a editar cuando quieras; el último ajuste manda. "Duplicar" crea otra toma igual a otra hora, de hoy en adelante. ${m.custom?'':'Para volver al horario original, usa ⚙️ → Restablecer ajustes.'}</p>`);
 }
 window.editMed=editMed;
 function saveEdit(ph,day,id){
@@ -430,17 +431,36 @@ window.saveEdit=saveEdit;
 function deleteCustom(id){ if(!confirm('¿Eliminar esta toma de todos sus días?')) return; CUSTOM=CUSTOM.filter(c=>c.id!==id); saveExtras(); closeModal(); renderNav(currentPhase); renderDay(currentPhase,currentDay); }
 window.deleteCustom=deleteCustom;
 
-function addMed(ph,day){
+// Días que le quedan a una toma a partir de `day` (para proponer la duración al duplicar)
+function remainingDays(ph,day,m){
+  if(m.custom){ const c=CUSTOM.find(x=>x.id===m.id); return c?Math.max(1,c.to-day+1):1; }
+  if(m.dur>=999) return 999;
+  return Math.max(1,(m.sd||1)+m.dur-day);
+}
+function duplicateMed(ph,day,id){
+  const m=getMedsForDay(ph,day).find(x=>x.id===id); if(!m) return;
+  const days=remainingDays(ph,day,m);
+  addMed(ph,day,{name:m.name, detail:'', tag:m.tag, lb:m.lb, days:Math.min(days,60), forever:days>=999, taken:false});
+}
+window.duplicateMed=duplicateMed;
+
+function addMed(ph,day,pre){
+  pre=pre||{};
+  const esc=v=>String(v||'').replace(/"/g,'&quot;');
+  const nowT=`${String(new Date().getHours()).padStart(2,'0')}:${String(Math.floor(new Date().getMinutes()/5)*5).padStart(2,'0')}`;
   openModal(`
-    <h3>+ Agregar toma</h3>
-    <div class="field"><label>Medicamento</label><input type="text" id="a-name" placeholder="Ej: Paracetamol 1 g"></div>
-    <div class="field"><label>Detalle (opcional)</label><input type="text" id="a-detail" placeholder="Ej: dosis extra por dolor"></div>
-    <div class="field"><label>Hora</label><input type="time" id="a-time" value="${String(new Date().getHours()).padStart(2,'0')}:${String(Math.floor(new Date().getMinutes()/5)*5).padStart(2,'0')}"></div>
-    <div class="field"><label>Tipo</label><select id="a-tag">${TAG_OPTS.map(o=>`<option value="${o[0]}">${o[1]}</option>`).join('')}</select></div>
-    <div class="field"><label>Durante cuántos días (desde el día ${day})</label><input type="number" id="a-days" value="1" min="1" max="60"></div>
+    <h3>${pre.name?'⧉ Duplicar toma':'+ Agregar toma'}</h3>
+    <div class="field"><label>Medicamento</label><input type="text" id="a-name" placeholder="Ej: Paracetamol 1 g" value="${esc(pre.name)}"></div>
+    <div class="field"><label>Detalle (opcional)</label><input type="text" id="a-detail" placeholder="Ej: dosis extra por dolor" value="${esc(pre.detail)}"></div>
+    <div class="field"><label>Hora</label><input type="time" id="a-time" value="${pre.t||nowT}"></div>
+    <div class="field"><label>Tipo</label><select id="a-tag">${TAG_OPTS.map(o=>`<option value="${o[0]}"${o[0]===pre.tag?' selected':''}>${o[1]}</option>`).join('')}</select></div>
+    <div class="field"><label>Durante cuántos días (desde el día ${day})</label>
+      <input type="number" id="a-days" value="${pre.days||1}" min="1" max="60" ${pre.forever?'disabled':''}>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:8px;text-transform:none;letter-spacing:0;font-size:0.82rem;font-weight:500;color:var(--text)"><input type="checkbox" id="a-forever" ${pre.forever?'checked':''} onchange="document.getElementById('a-days').disabled=this.checked"> Sin fecha de término (todos los días siguientes)</label>
+    </div>
     <div class="field"><label>Estado</label><div class="radio-row">
-      <label><input type="radio" name="a-taken" value="1" checked> Ya la tomé (registrar)</label>
-      <label><input type="radio" name="a-taken" value="0"> Pendiente (recordatorio en la lista)</label>
+      <label><input type="radio" name="a-taken" value="1" ${pre.taken===false?'':'checked'}> Ya la tomé (registrar)</label>
+      <label><input type="radio" name="a-taken" value="0" ${pre.taken===false?'checked':''}> Pendiente (recordatorio en la lista)</label>
     </div></div>
     <div class="modal-actions">
       <button class="btn" onclick="closeModal()">Cancelar</button>
@@ -453,7 +473,8 @@ function saveAdd(ph,day){
   const detail=(document.getElementById('a-detail').value||'').trim();
   const t=document.getElementById('a-time').value||'08:00';
   const tag=document.getElementById('a-tag').value; const lb=(TAG_OPTS.find(o=>o[0]===tag)||[])[1]||'Manual';
-  const days=Math.max(1,parseInt(document.getElementById('a-days').value||'1',10));
+  const forever=document.getElementById('a-forever').checked;
+  const days=forever?9999:Math.max(1,parseInt(document.getElementById('a-days').value||'1',10));
   const taken=document.querySelector('input[name=a-taken]:checked').value==='1';
   const id='c_'+Date.now().toString(36);
   CUSTOM.push({id,ph,name,detail,t,tag,lb,from:day,to:day+days-1}); saveExtras();
