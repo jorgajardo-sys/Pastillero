@@ -114,6 +114,29 @@ main{padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 20px);max-width:56
 .tag-aines{background:#2d0f0f;color:#fca5a5;border:1px solid #ef444444}
 .tag-para{background:#0f2d2d;color:#5eead4;border:1px solid #14b8a644}
 .banner.danger{background:#3d0f0f66;border:1px solid var(--danger);color:#fecaca}
+.tag-custom{background:#1f2937;color:#d1d5db;border:1px solid #4b556366}
+.edit-btn{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--text2);display:grid;place-items:center;font-size:0.8rem;flex-shrink:0;cursor:pointer}
+.edit-btn:active{background:var(--surface3)}
+.med-card.custom{border-style:dashed}
+.add-btn{display:block;width:100%;margin:10px 0 4px;padding:11px;background:transparent;border:1px dashed var(--border);border-radius:12px;font-family:'Instrument Sans',sans-serif;font-size:0.82rem;color:var(--text2);cursor:pointer}
+.add-btn:active{border-color:var(--accent);color:var(--accent)}
+.modal-bg{position:fixed;inset:0;background:#00000099;z-index:300;display:none;align-items:flex-end;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:18px 18px 0 0;padding:18px 18px calc(env(safe-area-inset-bottom,0px) + 18px);width:100%;max-width:560px;max-height:88vh;overflow-y:auto}
+.modal h3{font-family:'Fraunces',serif;font-weight:600;font-size:1.1rem;margin-bottom:12px}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:0.68rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text2);margin-bottom:5px}
+.field input[type=text],.field input[type=number],.field select{width:100%;background:var(--surface3);border:1px solid var(--border);border-radius:9px;padding:9px 11px;color:var(--text);font-family:'Instrument Sans',sans-serif;font-size:0.9rem}
+.field input[type=time]{width:120px;background:var(--surface3);border:1px solid var(--border);border-radius:9px;padding:8px 10px;color:var(--accent);font-family:'Instrument Sans',sans-serif;font-size:1rem;font-weight:600;-webkit-appearance:none}
+.field input:focus,.field select:focus{outline:none;border-color:var(--accent)}
+.radio-row{display:flex;flex-direction:column;gap:6px}
+.radio-row label{display:flex;align-items:center;gap:9px;font-size:0.84rem;text-transform:none;letter-spacing:0;font-weight:500;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:9px 11px;cursor:pointer}
+.radio-row input{accent-color:var(--accent)}
+.modal-actions{display:flex;gap:8px;margin-top:14px}
+.btn{flex:1;padding:12px;border-radius:11px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Instrument Sans',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer}
+.btn.primary{background:var(--accent);color:#0f1a14;border-color:var(--accent)}
+.btn.danger{color:var(--danger);border-color:#7f1d1d}
+.modal-note{font-size:0.72rem;color:var(--text2);margin-top:8px;line-height:1.45}
 
 .all-done{text-align:center;padding:20px 16px 8px}
 .all-done .emoji{font-size:2.6rem;display:block;margin-bottom:6px}
@@ -222,13 +245,20 @@ main{padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 20px);max-width:56
       </div>
     </div>
     <button class="save-settings-btn" onclick="saveSettings()">✓ Guardar horarios</button>
+    <button class="reset-btn" style="margin-top:18px" onclick="resetExtras()">↺ Restablecer ajustes manuales y tomas agregadas</button>
     <p class="settings-note">Los cambios se aplican inmediatamente y se guardan en tu dispositivo.</p>
   </div>
+</div>
+
+<div class="modal-bg" id="modal-bg" onclick="if(event.target===this) closeModal()">
+  <div class="modal" id="modal"></div>
 </div>
 
 <script>
 const STORAGE_KEY  = 'pastillero_jorge_pwa_v2';
 const SETTINGS_KEY = 'pastillero_settings_v2';
+const OVR_KEY      = 'pastillero_ovr_v1';     // ajustes de hora / saltos por medicamento
+const CUSTOM_KEY   = 'pastillero_custom_v1';  // tomas agregadas a mano
 const START        = new Date('2026-05-11T00:00:00'); // Sinusitis mayo
 const START_AMIG   = new Date('2026-10-13T00:00:00'); // Amígdalas octubre
 const START_RINO   = new Date('2026-10-22T00:00:00'); // Rinofaringitis + rinitis alérgica (Dr. Farfán)
@@ -309,22 +339,22 @@ function buildRino() {
   const W=SCHED.wake, B=SCHED.breakfast, D=SCHED.dinner, E=SCHED.windowEnd||'00:00', M=midTime(B,E);
   const skW=sortKey(W), skB=sortKey(B), skM=sortKey(M), skD=sortKey(D)+1000, skE=endKey(E)+1000;
   return [
-    {id:'omeprazol_r',   name:'Omeprazol 20 mg',           detail:'1 cáps. en ayunas — mientras dure el Ibuprofeno (recomendado)', tk:'Mañana · '+fmt12(W), sk:skW,   dur:4,  tag:'tag-gp',   lb:'Gastroprotector', sd:2},
-    {id:'mometasona_am', name:'Mometasona 50 mcg nasal',   detail:'1 puff por fosa — c/12h (días 1–10)',                          tk:'Mañana · '+fmt12(B), sk:skB,   dur:10, tag:'tag-inh',  lb:'Corticoide nasal',sd:2},
-    {id:'mometasona_mt', name:'Mometasona 50 mcg nasal',   detail:'1 puff por fosa cada mañana — mantención permanente',           tk:'Mañana · '+fmt12(B), sk:skB,   dur:999,tag:'tag-inh',  lb:'Corticoide nasal',sd:12},
+    {id:'omeprazol_r',   name:'Omeprazol 20 mg',           detail:'1 cáps. en ayunas — mientras dure el Ibuprofeno (recomendado)', t:W, tk:'Mañana · '+fmt12(W), sk:skW,   dur:4,  tag:'tag-gp',   lb:'Gastroprotector', sd:2},
+    {id:'mometasona_am', name:'Mometasona 50 mcg nasal',   detail:'1 puff por fosa — c/12h (días 1–10)',                          t:B, tk:'Mañana · '+fmt12(B), sk:skB,   dur:10, tag:'tag-inh',  lb:'Corticoide nasal',sd:2},
+    {id:'mometasona_mt', name:'Mometasona 50 mcg nasal',   detail:'1 puff por fosa cada mañana — mantención permanente',           t:B, tk:'Mañana · '+fmt12(B), sk:skB,   dur:999,tag:'tag-inh',  lb:'Corticoide nasal',sd:12},
     // Día 1 (22 oct): Ibuprofeno. Desde día 2 (23 oct): Paracetamol c/8h + Celecoxib c/12h, 3 días.
-    {id:'xumer',         name:'Xumer 120 mg (Etoricoxib)',  detail:'1 comp. con desayuno — solo hoy (si no lo tomaste, salta)',   tk:'Mañana · '+fmt12(B), sk:skB+1, dur:1,  tag:'tag-aines',lb:'AINE (COX-2)',    sd:2},
-    {id:'amox_am',       name:'Amoxicilina/Clavulánico 875/125', detail:'1 comp. con desayuno (c/12h · hasta el 30 oct)',          tk:'Mañana · '+fmt12(B), sk:skB+2, dur:7,  tag:'tag-atb',  lb:'Antibiótico',     sd:3},
-    {id:'ibu600_am',     name:'Ibuprofeno 600 mg',           detail:'1 comp. con desayuno (c/8h · 1ª del día)',                     tk:'Mañana · '+fmt12(B), sk:skB+3, dur:3,  tag:'tag-aines',lb:'AINE',            sd:3},
-    {id:'ibu600_md',     name:'Ibuprofeno 600 mg',           detail:'1 comp. con algo de comida (c/8h · 2ª del día)',               tk:'Tarde · '+fmt12(M),  sk:skM,   dur:3,  tag:'tag-aines',lb:'AINE',            sd:3},
-    {id:'amox_first',    name:'Amoxicilina/Clavulánico 875/125', detail:'1ª dosis — tomada al salir de la consulta',               tk:'Tarde · 4:30 PM',    sk:990,   dur:1,  tag:'tag-atb',  lb:'Antibiótico',     sd:2},
-    {id:'amox_pm',       name:'Amoxicilina/Clavulánico 875/125', detail:'1 comp. con la cena (c/12h · hasta el 29 oct)',           tk:'Cena · '+fmt12(D),   sk:skD+1, dur:6,  tag:'tag-atb',  lb:'Antibiótico',     sd:3},
-    {id:'ibu600_pm',     name:'Ibuprofeno 600 mg',           detail:'1 comp. con algo de comida (c/8h · 3ª del día)',               tk:'Noche · '+fmt12(E),  sk:skE,   dur:3,  tag:'tag-aines',lb:'AINE',            sd:3},
-    {id:'paracetamol_2', name:'Paracetamol (Xumadol) 1 g',  detail:'1 sobre — entre los dos ibuprofenos',                          tk:'Mediodía · 12:00 PM',sk:720,   dur:3,  tag:'tag-para', lb:'Analgésico',      sd:2},
-    {id:'ibuprofeno_md', name:'Ibuprofeno 400 mg',         detail:'1 comp. con algo de comida (c/8h · 2ª del día)',               tk:'Tarde · '+fmt12(M),  sk:skM,   dur:1,  tag:'tag-aines',lb:'AINE',            sd:1},
-    {id:'mometasona_pm', name:'Mometasona 50 mcg nasal',   detail:'1 puff por fosa — c/12h (días 1–10)',                          tk:'Cena · '+fmt12(D),   sk:skD,   dur:10, tag:'tag-inh',  lb:'Corticoide nasal',sd:1},
-    {id:'paracetamol_3', name:'Paracetamol (Xumadol) 1 g',  detail:'1 sobre — entre el ibuprofeno de las 16 y el de medianoche (hoy 23: a las 23:00)', tk:'Noche · 8:00 PM', sk:1200, dur:3,tag:'tag-para', lb:'Analgésico',      sd:2},
-    {id:'ibuprofeno_pm', name:'Ibuprofeno 400 mg',         detail:'1 comp. con algo de comida (c/8h · 3ª del día)',               tk:'Noche · '+fmt12(E),  sk:skE,   dur:1,  tag:'tag-aines',lb:'AINE',            sd:1},
+    {id:'xumer',         name:'Xumer 120 mg (Etoricoxib)',  detail:'1 comp. con desayuno — solo hoy (si no lo tomaste, salta)',   t:B, tk:'Mañana · '+fmt12(B), sk:skB+1, dur:1,  tag:'tag-aines',lb:'AINE (COX-2)',    sd:2},
+    {id:'amox_am',       name:'Amoxicilina/Clavulánico 875/125', detail:'1 comp. con desayuno (c/12h · hasta el 30 oct)',          t:B, tk:'Mañana · '+fmt12(B), sk:skB+2, dur:7,  tag:'tag-atb',  lb:'Antibiótico',     sd:3},
+    {id:'ibu600_am',     name:'Ibuprofeno 600 mg',           detail:'1 comp. con desayuno (c/8h · 1ª del día)',                     t:B, tk:'Mañana · '+fmt12(B), sk:skB+3, dur:3,  tag:'tag-aines',lb:'AINE',            sd:3},
+    {id:'ibu600_md',     name:'Ibuprofeno 600 mg',           detail:'1 comp. con algo de comida (c/8h · 2ª del día)',               t:M, tk:'Tarde · '+fmt12(M),  sk:skM,   dur:3,  tag:'tag-aines',lb:'AINE',            sd:3},
+    {id:'amox_first',    name:'Amoxicilina/Clavulánico 875/125', detail:'1ª dosis — tomada al salir de la consulta',               t:'16:30', tk:'Tarde · 4:30 PM',    sk:990,   dur:1,  tag:'tag-atb',  lb:'Antibiótico',     sd:2},
+    {id:'amox_pm',       name:'Amoxicilina/Clavulánico 875/125', detail:'1 comp. con la cena (c/12h · hasta el 29 oct)',           t:D, tk:'Cena · '+fmt12(D),   sk:skD+1, dur:6,  tag:'tag-atb',  lb:'Antibiótico',     sd:3},
+    {id:'ibu600_pm',     name:'Ibuprofeno 600 mg',           detail:'1 comp. con algo de comida (c/8h · 3ª del día)',               t:E, tk:'Noche · '+fmt12(E),  sk:skE,   dur:3,  tag:'tag-aines',lb:'AINE',            sd:3},
+    {id:'paracetamol_2', name:'Paracetamol (Xumadol) 1 g',  detail:'1 sobre — entre los dos ibuprofenos',                          t:'12:00', tk:'Mediodía · 12:00 PM',sk:720,   dur:3,  tag:'tag-para', lb:'Analgésico',      sd:2},
+    {id:'ibuprofeno_md', name:'Ibuprofeno 400 mg',         detail:'1 comp. con algo de comida (c/8h · 2ª del día)',               t:M, tk:'Tarde · '+fmt12(M),  sk:skM,   dur:1,  tag:'tag-aines',lb:'AINE',            sd:1},
+    {id:'mometasona_pm', name:'Mometasona 50 mcg nasal',   detail:'1 puff por fosa — c/12h (días 1–10)',                          t:D, tk:'Cena · '+fmt12(D),   sk:skD,   dur:10, tag:'tag-inh',  lb:'Corticoide nasal',sd:1},
+    {id:'paracetamol_3', name:'Paracetamol (Xumadol) 1 g',  detail:'1 sobre — entre el ibuprofeno de las 16 y el de medianoche (hoy 23: a las 23:00)', t:'20:00', tk:'Noche · 8:00 PM', sk:1200, dur:3,tag:'tag-para', lb:'Analgésico',      sd:2},
+    {id:'ibuprofeno_pm', name:'Ibuprofeno 400 mg',         detail:'1 comp. con algo de comida (c/8h · 3ª del día)',               t:E, tk:'Noche · '+fmt12(E),  sk:skE,   dur:1,  tag:'tag-aines',lb:'AINE',            sd:1},
   ];
 }
 
@@ -332,12 +362,120 @@ function buildRino() {
 const PHASE_DAYS = {short:10, long:84, amig:6, rino:30};
 const PHASE_STARTS = {short:START, long:START, amig:START_AMIG, rino:START_RINO};
 
+/* ---------- AJUSTES MANUALES ---------- */
+let OVR={}, CUSTOM=[];
+function loadExtras(){ try{ OVR=JSON.parse(localStorage.getItem(OVR_KEY)||'{}'); CUSTOM=JSON.parse(localStorage.getItem(CUSTOM_KEY)||'[]'); }catch{ OVR={}; CUSTOM=[]; } }
+function saveExtras(){ try{ localStorage.setItem(OVR_KEY,JSON.stringify(OVR)); localStorage.setItem(CUSTOM_KEY,JSON.stringify(CUSTOM)); }catch{} }
+function periodLabel(t){ const k=endKey(t), h=Math.floor(k/60); const p=h<5?'Madrugada':h<12?'Mañana':h<18?'Tarde':h<23?'Noche':'Medianoche'; return `${p} · ${fmt12(t)}`; }
+function ruleFor(ph,id,day){ const rules=OVR[ph+':'+id]||[]; let r=null; rules.forEach(x=>{ if(day>=x.from && (x.to==null||day<=x.to)) r=x; }); return r; }
+function addRule(ph,id,rule){ const k=ph+':'+id; OVR[k]=(OVR[k]||[]).concat([rule]); saveExtras(); }
+
 function getMedsForDay(ph, day) {
   const defs = ph==='short' ? buildMeds() : ph==='long' ? buildLong() : ph==='amig' ? buildAmig() : buildRino();
-  const list = defs.filter(m=>{ const sd=m.sd||1, rel=day-sd+1; return rel>=1&&rel<=m.dur; }).sort((a,b)=>a.sk-b.sk);
+  let list = defs.filter(m=>{ const sd=m.sd||1, rel=day-sd+1; return rel>=1&&rel<=m.dur; });
   // Día 1 amígdalas: la 1ª dosis real fue a las 21:00, no al cierre de ventana
-  if(ph==='amig'&&day===1) return list.map(m=>/^(ketoprofeno|broncard)/.test(m.id)?{...m, tk:'Noche · 9:00 PM (1ª dosis)'}:m);
-  return list;
+  if(ph==='amig'&&day===1) list=list.map(m=>/^(ketoprofeno|broncard)/.test(m.id)?{...m, tk:'Noche · 9:00 PM (1ª dosis)'}:m);
+  // Aplicar ajustes manuales (hora / saltar)
+  list=list.map((m,i)=>{
+    const r=ruleFor(ph,m.id,day); if(!r) return m;
+    if(r.skip) return null;
+    const t=r.t||m.t; if(!t) return m;
+    return {...m, t, tk:periodLabel(t), sk:endKey(t)+i/1000, edited:true};
+  }).filter(Boolean);
+  // Tomas agregadas a mano
+  CUSTOM.filter(c=>c.ph===ph && day>=c.from && day<=c.to).forEach(c=>{
+    const r=ruleFor(ph,c.id,day); if(r&&r.skip) return;
+    const t=(r&&r.t)||c.t;
+    list.push({id:c.id, name:c.name, detail:c.detail||'', t, tk:periodLabel(t), sk:endKey(t)+0.5, tag:c.tag||'tag-custom', lb:c.lb||'Manual', custom:true});
+  });
+  return list.sort((a,b)=>a.sk-b.sk);
+}
+
+/* ---------- EDITOR ---------- */
+const TAG_OPTS=[['tag-para','Analgésico'],['tag-aines','AINE'],['tag-atb','Antibiótico'],['tag-inh','Corticoide nasal'],['tag-cort','Corticoide'],['tag-ah','Antihistamínico'],['tag-exp','Antitusivo'],['tag-gp','Gastroprotector'],['tag-sal','Sol. salina'],['tag-custom','Otro']];
+function openModal(html){ document.getElementById('modal').innerHTML=html; document.getElementById('modal-bg').classList.add('open'); }
+function closeModal(){ document.getElementById('modal-bg').classList.remove('open'); }
+window.closeModal=closeModal;
+
+function editMed(ph,day,id){
+  const m=getMedsForDay(ph,day).find(x=>x.id===id); if(!m) return;
+  const t=m.t||'08:00';
+  openModal(`
+    <h3>✎ ${m.name}</h3>
+    <div class="field"><label>Hora</label><input type="time" id="e-time" value="${t}"></div>
+    <div class="field"><label>Aplicar a</label>
+      <div class="radio-row">
+        <label><input type="radio" name="e-scope" value="forward" checked> Desde hoy en adelante (día ${day} y siguientes)</label>
+        <label><input type="radio" name="e-scope" value="today"> Solo hoy (día ${day})</label>
+        <label><input type="radio" name="e-scope" value="skip"> Saltar esta toma solo hoy (no la tomé / no corresponde)</label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancelar</button>
+      ${m.custom?`<button class="btn danger" onclick="deleteCustom('${id}')">Eliminar</button>`:''}
+      <button class="btn primary" onclick="saveEdit('${ph}',${day},'${id}')">Guardar</button>
+    </div>
+    <p class="modal-note">"Desde hoy en adelante" no toca los días anteriores. Puedes volver a editar cuando quieras; el último ajuste manda. ${m.custom?'':'Para volver al horario original, usa ⚙️ → Restablecer ajustes.'}</p>`);
+}
+window.editMed=editMed;
+function saveEdit(ph,day,id){
+  const t=document.getElementById('e-time').value||'08:00';
+  const scope=document.querySelector('input[name=e-scope]:checked').value;
+  if(scope==='skip') addRule(ph,id,{from:day,to:day,skip:true});
+  else if(scope==='today') addRule(ph,id,{from:day,to:day,t});
+  else addRule(ph,id,{from:day,to:null,t});
+  closeModal(); renderNav(ph); renderDay(ph,day); setSyncState('synced','guardado ✓');
+}
+window.saveEdit=saveEdit;
+function deleteCustom(id){ if(!confirm('¿Eliminar esta toma de todos sus días?')) return; CUSTOM=CUSTOM.filter(c=>c.id!==id); saveExtras(); closeModal(); renderNav(currentPhase); renderDay(currentPhase,currentDay); }
+window.deleteCustom=deleteCustom;
+
+function addMed(ph,day){
+  openModal(`
+    <h3>+ Agregar toma</h3>
+    <div class="field"><label>Medicamento</label><input type="text" id="a-name" placeholder="Ej: Paracetamol 1 g"></div>
+    <div class="field"><label>Detalle (opcional)</label><input type="text" id="a-detail" placeholder="Ej: dosis extra por dolor"></div>
+    <div class="field"><label>Hora</label><input type="time" id="a-time" value="${String(new Date().getHours()).padStart(2,'0')}:${String(Math.floor(new Date().getMinutes()/5)*5).padStart(2,'0')}"></div>
+    <div class="field"><label>Tipo</label><select id="a-tag">${TAG_OPTS.map(o=>`<option value="${o[0]}">${o[1]}</option>`).join('')}</select></div>
+    <div class="field"><label>Durante cuántos días (desde el día ${day})</label><input type="number" id="a-days" value="1" min="1" max="60"></div>
+    <div class="field"><label>Estado</label><div class="radio-row">
+      <label><input type="radio" name="a-taken" value="1" checked> Ya la tomé (registrar)</label>
+      <label><input type="radio" name="a-taken" value="0"> Pendiente (recordatorio en la lista)</label>
+    </div></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancelar</button>
+      <button class="btn primary" onclick="saveAdd('${ph}',${day})">Agregar</button>
+    </div>`);
+}
+window.addMed=addMed;
+function saveAdd(ph,day){
+  const name=(document.getElementById('a-name').value||'').trim(); if(!name){ alert('Escribe el nombre del medicamento.'); return; }
+  const detail=(document.getElementById('a-detail').value||'').trim();
+  const t=document.getElementById('a-time').value||'08:00';
+  const tag=document.getElementById('a-tag').value; const lb=(TAG_OPTS.find(o=>o[0]===tag)||[])[1]||'Manual';
+  const days=Math.max(1,parseInt(document.getElementById('a-days').value||'1',10));
+  const taken=document.querySelector('input[name=a-taken]:checked').value==='1';
+  const id='c_'+Date.now().toString(36);
+  CUSTOM.push({id,ph,name,detail,t,tag,lb,from:day,to:day+days-1}); saveExtras();
+  if(taken){ state[sk(ph,day,id)]=true; scheduleSave(); }
+  closeModal(); renderNav(ph); renderDay(ph,day);
+}
+window.saveAdd=saveAdd;
+function resetExtras(){ if(!confirm('¿Borrar todos los ajustes manuales de hora y las tomas agregadas? Los registros de tomas marcadas no se borran.')) return; OVR={}; CUSTOM=[]; saveExtras(); closeSettings(); renderNav(currentPhase); renderDay(currentPhase,currentDay); }
+window.resetExtras=resetExtras;
+
+/* Registro retroactivo: 24 oct, 3:00 — Ibuprofeno 600 + Amoxi-clav tomados de madrugada en lugar de las 8:00 */
+function migrate(){
+  try{
+    if(localStorage.getItem('pastillero_mig_24oct_3am')) return;
+    const day=3; // 24 oct en fase rino
+    addRule('rino','ibu600_am',{from:day,to:day,skip:true});
+    addRule('rino','amox_am',{from:day,to:day,skip:true});
+    CUSTOM.push({id:'c_24oct_ibu',  ph:'rino', name:'Ibuprofeno 600 mg', detail:'tomado de madrugada (reemplaza la de las 8:00)', t:'03:00', tag:'tag-aines', lb:'AINE', from:day, to:day});
+    CUSTOM.push({id:'c_24oct_amox', ph:'rino', name:'Amoxicilina/Clavulánico 875/125', detail:'tomado de madrugada (reemplaza la de las 8:00)', t:'03:00', tag:'tag-atb', lb:'Antibiótico', from:day, to:day});
+    state[sk('rino',day,'c_24oct_ibu')]=true; state[sk('rino',day,'c_24oct_amox')]=true;
+    saveExtras(); save(); localStorage.setItem('pastillero_mig_24oct_3am','1');
+  }catch{}
 }
 
 let state={}, saveTimer=null, currentPhase='rino', currentDay=todayDay('rino');
@@ -443,10 +581,11 @@ function renderDay(ph,day){
   const groupsHtml=torder.map(t=>{
     const cards=groups[t].map(m=>{
       const tk2=isTaken(ph,day,m.id);
-      return `<div class="med-card ${tk2?'taken':''}" onclick="toggleMed('${ph}',${day},'${m.id}')">
+      return `<div class="med-card ${tk2?'taken':''} ${m.custom?'custom':''}" onclick="toggleMed('${ph}',${day},'${m.id}')">
         <div class="check">${tk2?'✓':''}</div>
-        <div class="med-info"><div class="med-name">${m.name}</div><div class="med-detail">${m.detail}</div></div>
+        <div class="med-info"><div class="med-name">${m.name}${m.edited?' <span style="color:var(--text2);font-weight:400">✎</span>':''}</div><div class="med-detail">${m.detail}</div></div>
         <span class="med-tag ${m.tag}">${m.lb}</span>
+        <button class="edit-btn" onclick="event.stopPropagation();editMed('${ph}',${day},'${m.id}')" title="Editar hora">✎</button>
       </div>`;
     }).join('');
     return `<div class="time-block"><div class="time-label">${t}</div>${cards}</div>`;
@@ -481,6 +620,7 @@ function renderDay(ph,day){
     ${banners}
     ${isComplete(ph,day)?`<div class="all-done"><span class="emoji">✅</span><p>¡Todo tomado!</p><small>Toca cualquier med para desmarcar</small></div>`:''}
     ${meds.length===0?`<div class="no-meds">Sin medicamentos este día</div>`:groupsHtml}
+    <button class="add-btn" onclick="addMed('${ph}',${day})">+ Agregar toma (otro medicamento o dosis extra)</button>
     <button class="reset-btn" onclick="resetDay('${ph}',${day})">↺ Reiniciar día ${day}</button>`;
 }
 
@@ -507,7 +647,7 @@ window.switchPhase=switchPhase;
 
 if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 
-load();
+load(); loadExtras(); migrate();
 setTimeout(()=>{ document.getElementById('loading').classList.add('hidden'); setTimeout(()=>document.getElementById('loading')?.remove(),400); },800);
 setSyncState('synced','guardado ✓');
 // Iniciar en la fase activa
