@@ -29,7 +29,7 @@ header{padding:calc(env(safe-area-inset-top,0px) + 12px) 20px 12px;background:rg
 header h1{font-family:'Fraunces',serif;font-weight:300;font-size:1.4rem;color:var(--accent)}
 header p{font-size:0.72rem;color:var(--text2);margin-top:1px}
 .header-actions{display:flex;gap:8px;align-items:center}
-.sync-pill{display:flex;align-items:center;gap:5px;font-size:0.68rem;color:var(--text2);padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface2)}
+.sync-pill{display:flex;white-space:nowrap;flex-shrink:0;align-items:center;gap:5px;font-size:0.68rem;color:var(--text2);padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface2)}
 .sync-dot{width:6px;height:6px;border-radius:50%;transition:all 0.3s;background:var(--text2)}
 .sync-dot.synced{background:var(--accent)}
 .sync-dot.syncing{background:var(--warn);animation:blink 1s infinite}
@@ -196,7 +196,7 @@ main{padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 20px);max-width:56
     <div class="header-actions">
       <div class="sync-pill">
         <div class="sync-dot synced" id="sync-dot"></div>
-        <span id="sync-text">guardado</span>
+        <span id="sync-text">save</span>
       </div>
       <div class="settings-btn" id="gc-quick" onclick="gcQuickSync()" title="Sincronizar con Google Calendar">☁️</div>
       <div class="settings-btn" onclick="openSettings()">⚙️</div>
@@ -444,7 +444,7 @@ function saveEdit(ph,day,id){
   if(scope==='skip') addRule(ph,id,{from:day,to:day,skip:true});
   else if(scope==='today') addRule(ph,id,{from:day,to:day,t});
   else addRule(ph,id,{from:day,to:null,t});
-  closeModal(); renderNav(ph); renderDay(ph,day); setSyncState('synced','guardado ✓');
+  closeModal(); renderNav(ph); renderDay(ph,day); setSyncState('synced','save ✓');
 }
 window.saveEdit=saveEdit;
 function deleteCustom(id){ if(!confirm('¿Eliminar esta toma de todos sus días?')) return; CUSTOM=CUSTOM.filter(c=>c.id!==id); saveExtras(); closeModal(); renderNav(currentPhase); renderDay(currentPhase,currentDay); }
@@ -537,7 +537,7 @@ function isComplete(ph,d){ const p=progress(ph,d); return p.total>0&&p.taken===p
 
 function load(){ try{ const r=localStorage.getItem(STORAGE_KEY); if(r) state=JSON.parse(r); const s=localStorage.getItem(SETTINGS_KEY); if(s) SCHED={...SCHED,...JSON.parse(s)}; }catch{} }
 function save(){ try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(state)); }catch{} }
-function scheduleSave(){ setSyncState('syncing','guardando...'); clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ save(); setSyncState('synced','guardado ✓'); },400); }
+function scheduleSave(){ setSyncState('syncing','saving…'); clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ save(); setSyncState('synced','save ✓'); },400); }
 function setSyncState(s,t){ const d=document.getElementById('sync-dot'),x=document.getElementById('sync-text'); if(d) d.className=`sync-dot ${s}`; if(x) x.textContent=t; }
 
 function openSettings(){
@@ -561,7 +561,7 @@ function saveSettings(){
   SCHED.dinner=document.getElementById('t-dinner').value;
   SCHED.windowEnd=document.getElementById('t-window').value;
   try{ localStorage.setItem(SETTINGS_KEY,JSON.stringify(SCHED)); }catch{}
-  closeSettings(); renderNav(currentPhase); renderDay(currentPhase,currentDay); setSyncState('synced','guardado ✓');
+  closeSettings(); renderNav(currentPhase); renderDay(currentPhase,currentDay); setSyncState('synced','save ✓');
 }
 window.saveSettings=saveSettings;
 
@@ -804,7 +804,7 @@ if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.se
 
 load(); loadExtras(); migrate(); gcLoad();
 setTimeout(()=>{ document.getElementById('loading').classList.add('hidden'); setTimeout(()=>document.getElementById('loading')?.remove(),400); },800);
-setSyncState('synced','guardado ✓');
+setSyncState('synced','save ✓');
 // Iniciar en la fase activa
 switchPhase('rino');
 </script>
