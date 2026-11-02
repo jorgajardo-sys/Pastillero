@@ -45,6 +45,13 @@ header p{font-size:0.72rem;color:var(--text2);margin-top:1px}
 .phase-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 .phase-tab.active.amig{color:var(--orange);border-bottom-color:var(--orange)}
 .phase-tab.active.rino{color:#60a5fa;border-bottom-color:#60a5fa}
+.phase-tab.active.orl{color:#c084fc;border-bottom-color:#c084fc}
+.day-btn.active.orl-active{background:#a855f720;border-color:#c084fc;color:#c084fc}
+.day-btn.complete.orl-done::after{background:#c084fc}
+.ring-fg.orl-ring{stroke:#c084fc}
+.ring-text.orl-text{color:#c084fc}
+.phase-label.orl{background:#2d0f3d66;color:#c084fc;border:1px solid #a855f766}
+.banner.purple{background:#2d0f3d44;border:1px solid #a855f744;color:#c084fc}
 
 .day-nav{display:flex;gap:6px;padding:10px 16px;overflow-x:auto;scrollbar-width:none;background:var(--surface2);border-bottom:1px solid var(--border);position:sticky;top:43px;z-index:40}
 .day-nav::-webkit-scrollbar{display:none}
@@ -206,6 +213,7 @@ main{padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 20px);max-width:56
 
 <div class="scroll-area">
   <div class="phase-tabs">
+    <button class="phase-tab" id="tab-orl"   onclick="switchPhase('orl')">🟣 ORL · 2 nov</button>
     <button class="phase-tab" id="tab-rino"  onclick="switchPhase('rino')">🔵 Amigdalitis · 22 oct</button>
     <button class="phase-tab" id="tab-amig"  onclick="switchPhase('amig')">🟠 Amígdalas · 13–18 oct</button>
     <button class="phase-tab" id="tab-short" onclick="switchPhase('short')">🔴 Sinusitis · may</button>
@@ -224,15 +232,15 @@ main{padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 20px);max-width:56
     <div class="settings-section">
       <h3>Ajusta tus horarios de rutina</h3>
       <div class="time-row">
-        <div><div class="time-row-label">🌅 Despertar</div><div class="time-row-sub">Omeprazol</div></div>
+        <div><div class="time-row-label">🌅 Despertar</div><div class="time-row-sub">Omeprazol (en ayunas)</div></div>
         <input type="time" class="time-input" id="t-wake" value="07:30">
       </div>
       <div class="time-row">
-        <div><div class="time-row-label">🍳 Desayuno</div><div class="time-row-sub">Mometasona · Amoxi-clav · Ibuprofeno</div></div>
+        <div><div class="time-row-label">🍳 Desayuno</div><div class="time-row-sub">Avamys · Prednisona · Dolostat</div></div>
         <input type="time" class="time-input" id="t-breakfast" value="08:00">
       </div>
       <div class="time-row">
-        <div><div class="time-row-label">🍽️ Almuerzo</div><div class="time-row-sub">(sin tomas en la fase actual)</div></div>
+        <div><div class="time-row-label">🍽️ Almuerzo</div><div class="time-row-sub">Levoxin (con comida)</div></div>
         <input type="time" class="time-input" id="t-lunch" value="12:30">
       </div>
       <div class="time-row">
@@ -240,7 +248,7 @@ main{padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 20px);max-width:56
         <input type="time" class="time-input" id="t-snack" value="17:00">
       </div>
       <div class="time-row">
-        <div><div class="time-row-label">🌙 Cena</div><div class="time-row-sub">Mometasona · Amoxi-clav</div></div>
+        <div><div class="time-row-label">🌙 Cena</div><div class="time-row-sub">Avamys · Prednisona · Dolostat · Bilastina</div></div>
         <input type="time" class="time-input" id="t-dinner" value="21:00">
       </div>
     </div>
@@ -281,6 +289,7 @@ const CUSTOM_KEY   = 'pastillero_custom_v1';  // tomas agregadas a mano
 const START        = new Date('2026-05-11T00:00:00'); // Sinusitis mayo
 const START_AMIG   = new Date('2026-10-13T00:00:00'); // Amígdalas octubre
 const START_RINO   = new Date('2026-10-22T00:00:00'); // Rinofaringitis + rinitis alérgica (Dr. Farfán)
+const START_ORL    = new Date('2026-11-02T00:00:00'); // ORL Dra. Siso: Levoxin + Prednisona + Dolostat + Avamys + Bilastina
 
 let SCHED = { wake:'07:30', breakfast:'08:00', lunch:'12:30', snack:'17:00', dinner:'21:00', windowEnd:'00:00' };
 
@@ -377,9 +386,37 @@ function buildRino() {
   ];
 }
 
-// Amígdalas: 6 días de calendario (13→18 oct). Rinofaringitis: 10 días c/12h + mantención (se muestran 30 días).
-const PHASE_DAYS = {short:10, long:84, amig:6, rino:30};
-const PHASE_STARTS = {short:START, long:START, amig:START_AMIG, rino:START_RINO};
+function buildOrl() {
+  // Día 1 = 2 nov (consulta 14:00): primera toma ~15:00 con comida; Bilastina y Avamys de noche.
+  // Desde día 2: Omeprazol en ayunas · Avamys+Prednisona+Dolostat con desayuno · Levoxin con almuerzo · Avamys+Prednisona+Dolostat+Bilastina con cena.
+  // Totales: Levoxin 10 · Prednisona 14 (1 + 6×2 + 1) · Dolostat 10 (1 + 4×2 + 1) · Omeprazol 10 · Avamys y Bilastina permanentes.
+  const W=SCHED.wake, B=SCHED.breakfast, L=SCHED.lunch, D=SCHED.dinner;
+  const skW=sortKey(W), skB=sortKey(B), skL=sortKey(L), skD=sortKey(D)+1000;
+  return [
+    // Día 1 — primera toma de la tarde
+    {id:'levoxin_d1',    name:'Levoxin 750 mg (Levofloxacino)', detail:'1ª dosis — con comida',                         t:'15:00', tk:'Tarde · 3:00 PM', sk:900,   dur:1,  tag:'tag-atb',  lb:'Antibiótico',      sd:1},
+    {id:'pred_d1',       name:'Prednisona 20 mg (Bersen)',      detail:'1ª dosis — con comida',                         t:'15:00', tk:'Tarde · 3:00 PM', sk:901,   dur:1,  tag:'tag-cort', lb:'Corticoide',       sd:1},
+    {id:'keto_d1',       name:'Dolostat BI 150 mg (Ketoprofeno LP)', detail:'1ª dosis — con comida',                    t:'15:00', tk:'Tarde · 3:00 PM', sk:902,   dur:1,  tag:'tag-aines',lb:'AINE',             sd:1},
+    {id:'avamys_d1',     name:'Avamys 27,5 mcg nasal',          detail:'2 puff por fosa — 1ª aplicación',               t:'15:00', tk:'Tarde · 3:00 PM', sk:903,   dur:1,  tag:'tag-inh',  lb:'Corticoide nasal', sd:1},
+    // Mañana (desde día 2)
+    {id:'omeprazol_o',   name:'Omeprazol 20 mg',                detail:'1 cáps. en ayunas, 30 min antes del desayuno (10 días)', t:W, tk:'Mañana · '+fmt12(W), sk:skW,   dur:10, tag:'tag-gp',   lb:'Gastroprotector',  sd:2},
+    {id:'avamys_am',     name:'Avamys 27,5 mcg nasal',          detail:'2 puff por fosa (c/12h · 3 meses, luego permanente)',    t:B, tk:'Mañana · '+fmt12(B), sk:skB,   dur:999,tag:'tag-inh',  lb:'Corticoide nasal', sd:2},
+    {id:'pred_am',       name:'Prednisona 20 mg (Bersen)',      detail:'1 comp. con desayuno (c/12h · hasta el 9 nov)',          t:B, tk:'Mañana · '+fmt12(B), sk:skB+1, dur:7,  tag:'tag-cort', lb:'Corticoide',       sd:2},
+    {id:'keto_am',       name:'Dolostat BI 150 mg (Ketoprofeno LP)', detail:'1 comp. con desayuno (c/12h · hasta el 7 nov)',     t:B, tk:'Mañana · '+fmt12(B), sk:skB+2, dur:5,  tag:'tag-aines',lb:'AINE',             sd:2},
+    // Almuerzo
+    {id:'levoxin_o',     name:'Levoxin 750 mg (Levofloxacino)', detail:'1 comp. con el almuerzo (hasta el 11 nov). Lejos de magnesio, zinc, antiácidos y lácteos', t:L, tk:'Almuerzo · '+fmt12(L), sk:skL, dur:9, tag:'tag-atb', lb:'Antibiótico', sd:2},
+    // Cena
+    {id:'avamys_pm',     name:'Avamys 27,5 mcg nasal',          detail:'2 puff por fosa (c/12h · 3 meses, luego permanente)',    t:D, tk:'Cena · '+fmt12(D),   sk:skD,   dur:999,tag:'tag-inh',  lb:'Corticoide nasal', sd:2},
+    {id:'pred_pm',       name:'Prednisona 20 mg (Bersen)',      detail:'1 comp. con cena (c/12h)',                               t:D, tk:'Cena · '+fmt12(D),   sk:skD+1, dur:6,  tag:'tag-cort', lb:'Corticoide',       sd:2},
+    {id:'keto_pm',       name:'Dolostat BI 150 mg (Ketoprofeno LP)', detail:'1 comp. con cena (c/12h)',                          t:D, tk:'Cena · '+fmt12(D),   sk:skD+2, dur:4,  tag:'tag-aines',lb:'AINE',             sd:2},
+    {id:'bilastina',     name:'Bilastina 20 mg (Naire)',        detail:'1 comp. — 2 h después de cenar si puedes (permanente)',   t:D, tk:'Cena · '+fmt12(D),   sk:skD+3, dur:999,tag:'tag-ah',   lb:'Antihistamínico',  sd:1},
+    {id:'avamys_n1',     name:'Avamys 27,5 mcg nasal',          detail:'2 puff por fosa — 2ª aplicación de hoy',                 t:D, tk:'Cena · '+fmt12(D),   sk:skD,   dur:1,  tag:'tag-inh',  lb:'Corticoide nasal', sd:1},
+  ];
+}
+
+// Amígdalas: 6 días (13→18 oct). Rinofaringitis: hasta el 1 nov (la mometasona se reemplaza por Avamys). ORL: 90 días visibles.
+const PHASE_DAYS = {short:10, long:84, amig:6, rino:11, orl:90};
+const PHASE_STARTS = {short:START, long:START, amig:START_AMIG, rino:START_RINO, orl:START_ORL};
 
 /* ---------- AJUSTES MANUALES ---------- */
 let OVR={}, CUSTOM=[];
@@ -390,7 +427,7 @@ function ruleFor(ph,id,day){ const rules=OVR[ph+':'+id]||[]; let r=null; rules.f
 function addRule(ph,id,rule){ const k=ph+':'+id; OVR[k]=(OVR[k]||[]).concat([rule]); saveExtras(); }
 
 function getMedsForDay(ph, day) {
-  const defs = ph==='short' ? buildMeds() : ph==='long' ? buildLong() : ph==='amig' ? buildAmig() : buildRino();
+  const defs = ph==='short' ? buildMeds() : ph==='long' ? buildLong() : ph==='amig' ? buildAmig() : ph==='orl' ? buildOrl() : buildRino();
   let list = defs.filter(m=>{ const sd=m.sd||1, rel=day-sd+1; return rel>=1&&rel<=m.dur; });
   // Día 1 amígdalas: la 1ª dosis real fue a las 21:00, no al cierre de ventana
   if(ph==='amig'&&day===1) list=list.map(m=>/^(ketoprofeno|broncard)/.test(m.id)?{...m, tk:'Noche · 9:00 PM (1ª dosis)'}:m);
@@ -518,7 +555,7 @@ function migrate(){
   }catch{}
 }
 
-let state={}, saveTimer=null, currentPhase='rino', currentDay=todayDay('rino');
+let state={}, saveTimer=null, currentPhase='orl', currentDay=todayDay('orl');
 
 function todayDay(ph){
   const t=new Date(); t.setHours(0,0,0,0);
@@ -567,7 +604,7 @@ window.saveSettings=saveSettings;
 
 function renderNav(ph){
   const nav=document.getElementById('day-nav'), total=PHASE_DAYS[ph], today=todayDay(ph);
-  const acc=ph==='amig'?'amig':ph==='rino'?'rino':null;
+  const acc=ph==='amig'?'amig':ph==='rino'?'rino':ph==='orl'?'orl':null;
   nav.innerHTML='';
   for(let d=1;d<=total;d++){
     const cd=calDate(ph,d), dn=['D','L','M','X','J','V','S'];
@@ -589,9 +626,18 @@ function renderDay(ph,day){
   const meds=getMedsForDay(ph,day), {taken,total}=progress(ph,day);
   const pct=total?Math.round(taken/total*100):0, C=2*Math.PI*17, off=C-(pct/100)*C;
   const dateStr=cd.toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long'});
-  const acc=ph==='amig'?'amig':ph==='rino'?'rino':null;
+  const acc=ph==='amig'?'amig':ph==='rino'?'rino':ph==='orl'?'orl':null;
 
   let banners='';
+  if(ph==='orl'){
+    if(day===1) banners+=`<div class="banner success">✅ <div><strong>Hoy parte en la tarde</strong><br>Levoxin + Prednisona + Dolostat + Avamys con comida (~15:00). En la noche: Avamys + Bilastina. Mañana arranca el esquema completo.</div></div>`;
+    if(day<=10) banners+=`<div class="banner purple">🟣 <div><strong>Levoxin 750 — día ${day}/10.</strong> Con el almuerzo. Separar ≥ 6 h del magnesio (tómalo de noche) y de antiácidos, zinc o lácteos abundantes. Hidratación abundante.</div></div>`;
+    if(day<=10) banners+=`<div class="banner danger">⚠️ <div><strong>Levofloxacino + Prednisona = riesgo de tendón.</strong> Nada de fuerza ni carrera intensa hasta 4 semanas después del último Levoxin. Dolor en talón/Aquiles o cualquier tendón: suspender Levoxin y avisar a la Dra. Siso ese día. Palpitaciones, confusión o calambres intensos: consultar.</div></div>`;
+    if(day<=8) banners+=`<div class="banner orange">🍊 <div><strong>Prednisona 20 c/12h — ${day===1?'inicio':`día ${day}/8`}.</strong> Con comida. Última: 9 nov en la mañana (14 comp.). Puede dar insomnio y hambre; sin suspensión brusca.</div></div>`;
+    if(day<=6) banners+=`<div class="banner warn">🧴 <div><strong>Dolostat 150 c/12h — ${day===1?'inicio':`día ${day}/6`}.</strong> Con comida. Última: 7 nov en la mañana (10 comp.). No sumar ibuprofeno ni otro AINE.</div></div>`;
+    if(day>=2&&day<=11) banners+=`<div class="banner info">💊 <div><strong>Omeprazol — día ${day-1}/10.</strong> En ayunas, 30 min antes del desayuno. Obligatorio mientras dure Dolostat + Prednisona.</div></div>`;
+    banners+=`<div class="banner info">💨 <div><strong>Avamys 2 puff/fosa c/12h + Bilastina nocturna</strong> — 3 meses, luego permanente. Reemplazan a la mometasona y a la rupatadina. Avamys: agitar, cabeza recta, apuntar hacia fuera. Bilastina: lejos de comida y jugos (2 h después de cenar).</div></div>`;
+  }
   if(ph==='short'){
     if(day===1) banners+=`<div class="banner success">✅ <div><strong>Solo dosis de noche hoy</strong><br>Mañana arranca el esquema completo.</div></div>`;
     if(day<=5)  banners+=`<div class="banner warn">⚠️ <div><strong>Oxiler D — Día ${day}/5 máximo.</strong> Suspender al día 5.</div></div>`;
@@ -636,6 +682,7 @@ function renderDay(ph,day){
   if(ph==='short'){ plClass='short'; plText='Tratamiento agudo · 10 días'; }
   else if(ph==='long'){ plClass='long'; plText='Mantención · 12 semanas'; }
   else if(ph==='amig'){ plClass='amig'; plText='Amígdalas · Dra. Matamala · 5 días'; }
+  else if(ph==='orl'){ plClass='orl'; plText=day<=10?'ORL · Dra. Siso · Levoxin 10 días':day<=84?'ORL · Dra. Siso · mantención nasal 3 meses':'ORL · mantención permanente'; }
   else { plClass='rino'; plText=day===1?'Rinofaringitis · Dr. Farfán':day<=9?'Amigdalitis · Dra. Saldías · antibiótico 7 días':day<=11?'Mometasona c/12h · 10 días':'Rinitis alérgica · mantención'; }
 
   const icon=pct===100?'🏆':pct>=50?'💪':'⏳', txt=pct===100?'¡Día completo!':`${pct}% completado`;
@@ -679,7 +726,10 @@ function switchPhase(ph){
   const tabRino=document.getElementById('tab-rino');
   tabRino.classList.toggle('active',ph==='rino');
   tabRino.classList.toggle('rino',ph==='rino');
-  const subs={short:'Sinusitis · Dra. Siso · inicio 11 mayo 2026', long:'Mantención · inicio 11 mayo 2026', amig:'Amígdalas · Dra. Matamala · inicio 13 oct 2026', rino:'Amigdalitis · Dra. Saldías · ATB desde 23 oct 2026'};
+  const tabOrl=document.getElementById('tab-orl');
+  tabOrl.classList.toggle('active',ph==='orl');
+  tabOrl.classList.toggle('orl',ph==='orl');
+  const subs={short:'Sinusitis · Dra. Siso · inicio 11 mayo 2026', long:'Mantención · inicio 11 mayo 2026', amig:'Amígdalas · Dra. Matamala · inicio 13 oct 2026', rino:'Amigdalitis · Dra. Saldías · 22 oct – 1 nov 2026', orl:'ORL · Dra. Siso · inicio 2 nov 2026'};
   document.getElementById('header-sub').textContent=subs[ph];
   renderNav(ph); renderDay(ph,currentDay);
   setTimeout(()=>document.getElementById('tab-'+ph)?.scrollIntoView({inline:'center',block:'nearest'}),30);
@@ -688,7 +738,7 @@ window.switchPhase=switchPhase;
 
 /* ---------- GOOGLE CALENDAR ---------- */
 const GCAL_KEY='pastillero_gcal_v1', GC_SCOPES='https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly';
-const ACTIVE_PHASE='rino', GC_HORIZON=30, GC_TZ=(Intl.DateTimeFormat().resolvedOptions().timeZone)||'America/Santiago';
+const ACTIVE_PHASE='orl', GC_HORIZON=30, GC_TZ=(Intl.DateTimeFormat().resolvedOptions().timeZone)||'America/Santiago';
 let GC={clientId:'',calId:'',calName:'',lastSync:null}, gcToken=null, gcTokenExp=0, gcBusy=false;
 function gcLoad(){ try{ GC={...GC,...JSON.parse(localStorage.getItem(GCAL_KEY)||'{}')}; }catch{} }
 function gcSave(){ try{ localStorage.setItem(GCAL_KEY,JSON.stringify(GC)); }catch{} }
@@ -806,7 +856,7 @@ load(); loadExtras(); migrate(); gcLoad();
 setTimeout(()=>{ document.getElementById('loading').classList.add('hidden'); setTimeout(()=>document.getElementById('loading')?.remove(),400); },800);
 setSyncState('synced','save ✓');
 // Iniciar en la fase activa
-switchPhase('rino');
+switchPhase('orl');
 </script>
 </body>
 </html>
